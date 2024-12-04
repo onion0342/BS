@@ -1,20 +1,14 @@
 <template>
   <el-scrollbar height="100%" style="width: 100%; height: 100%">
-    <div
-      style="
-        margin-top: 20px;
-        margin-left: 20px;
-        font-size: 2em;
-        font-weight: bold;
-      "
-    >
-      互联网个人用户
+    <div style="display: flex; align-items: center; margin-top: 20px; margin-left: 20px;">
+      <img src="../assets/BSlogo.png" alt="Logo" class="circular-image" />
+      <div style="font-size: 2em; font-weight: bold; margin-left: 10px;">
+        PriceMatchHub
+      </div>
     </div>
-    <div style="width: 45%; margin: 0 auto; padding-top: 5vh">
-      <div class="loginBox">
-        <!-- 卡片标题 -->
+    <div style="width: 40%; margin: 0 auto; padding-top: 5vh">
+      <div class="RegisterBox">
 
-        <!-- 卡片内容 -->
         <div style="margin-left: 10px; height: 180px ;text-align: start; font-size: 16px;">
           <div style=" height: 40px;margin: auto;display: flex;align-items: center;justify-content: center">
             <div style ="font-size: 1.5rem;font-weight: bolder; margin-top: 20px;text-align: center">
@@ -24,16 +18,24 @@
           <el-divider/>
           <el-form label-position="right" label-width="100px" style=" font-weight: bolder; font-size: 10px">
             <el-form-item label="用户名"  style = "margin-top: 5px;">
-              <el-input v-model="account" style="width: 12.5vw; margin-left: 1rem" maxlength="18" clearable/>
+              <el-input v-model="account" style="width: 22.5vw; margin-left: 1rem" maxlength="18" clearable
+                        placeholder="输入用户名"/>
+            </el-form-item>
+            <el-form-item label="手机号"  style = "margin-top: 5px;">
+              <el-input v-model="phone" style="width: 22.5vw; margin-left: 1rem" maxlength="18" clearable
+                        placeholder="输入手机号"/>
+            </el-form-item>
+            <el-form-item label="邮箱"  style = "margin-top: 5px;">
+              <el-input v-model="email" style="width: 22.5vw; margin-left: 1rem" maxlength="18" clearable
+                        placeholder="输入邮箱"/>
             </el-form-item>
             <el-form-item label="密码" style = "margin-top: 5px;">
-              <el-input v-model="password" style="width: 12.5vw; margin-left: 1rem" type="password" maxlength="20" clearable/>
+              <el-input v-model="password" style="width: 22.5vw; margin-left: 1rem" type="password" maxlength="20" clearable
+                        placeholder="6到20位，只能由大小写字母和数字组成"/>
             </el-form-item>
-            <el-form-item label="电话号码"  style = "margin-top: 5px;">
-              <el-input v-model="phone" style="width: 12.5vw; margin-left: 1rem" maxlength="18" clearable/>
-            </el-form-item>
-            <el-form-item label="身份证号" style = "margin-top: 5px;">
-              <el-input v-model="IDCard" style="width: 12.5vw; margin-left: 1rem" type="password" maxlength="20" clearable/>
+            <el-form-item label="确认密码" style = "margin-top: 5px;">
+              <el-input v-model="confirmPassword" style="width: 22.5vw; margin-left: 1rem" type="password" maxlength="20" clearable
+                        placeholder="重复输入密码"/>
             </el-form-item>
 
             <!-- 卡片操作 -->
@@ -57,7 +59,7 @@ import { ElMessage } from "element-plus";
 export default {
   data() {
     return {
-      account: "", // 用户登录，还不知道用什么
+      account: "",
       password: "",
       IDCard: "",
       phone: "",
@@ -89,9 +91,9 @@ export default {
 </script>
   
   <style scoped>
-.loginBox {
-  height: 400px;
-  width: 400px;
+.RegisterBox {
+  height: 450px;
+  width: 600px;
   margin-top: 40px;
   margin-left: 27.5px;
   margin-right: 10px;
@@ -100,5 +102,13 @@ export default {
   padding-top: 15px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   text-align: center;
+}
+
+.circular-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 0px;
+
 }
 </style>

@@ -1,37 +1,6 @@
 <template>
   <div class="main">
     <el-container>
-      <el-aside class="aside">
-        <el-menu
-          active-text-color="#ffd04b"
-          background-color="#444444"
-          default-active="1"
-          text-color="#fff"
-          style="height: 100%; width: 100%; overflow: hidden"
-          :router="true"
-        >
-          <div
-            style="
-              color: white;
-              background-color: #181818;
-              width: 100%;
-              height: 10vh;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            "
-          >
-            网购比价网站
-          </div>
-          <el-menu-item index="/login/user">
-            <el-icon>
-              <User />
-            </el-icon>
-            <span>用户登录</span>
-          </el-menu-item>
-          <div style="height: 30px"></div>
-        </el-menu>
-      </el-aside>
       <el-container>
         <el-header style="height: 0vh"></el-header>
         <el-main style="height: 100%; width: 100%">
@@ -68,9 +37,8 @@ export default {
   bottom: 0;
   left: 0;
   background-color: #dcdcdc;
-  width: 100vw;
+  width: 99vw;
   height: 100vh;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -81,9 +49,8 @@ export default {
   right: 0;
   bottom: 0;
   left: 0;
-  width: 100%;
-  min-height: 100%;
-  height: auto;
+  width: 99vw;
+  height: 100vh;
   background-color: #dcdcdc;
 }
 

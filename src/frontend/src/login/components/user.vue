@@ -1,37 +1,31 @@
 <template>
-  <el-scrollbar height="100%" style="width: 100%; height: 100%">
-    <div
-      style="
-        margin-top: 20px;
-        margin-left: 20px;
-        font-size: 2em;
-        font-weight: bold;
-      "
-    >
-      互联网个人用户
+  <el-scrollbar style="width: 100%; height: 100%">
+    <div style="display: flex; align-items: center; margin-top: 20px; margin-left: 20px;">
+      <img src="../assets/BSlogo.png" alt="Logo" class="circular-image" />
+      <div style="font-size: 2em; font-weight: bold; margin-left: 10px;">
+        PriceMatchHub
+      </div>
     </div>
-    <div style="width: 45%; margin: 0 auto; padding-top: 5vh">
+    <div style="width: 40%; margin: 0 auto; padding-top: 5vh">
       <div class="loginBox">
-        <!-- 卡片标题 -->
-
-        <!-- 卡片内容 -->
         <div style="margin-left: 10px; text-align: start; font-size: 16px;">
-          <div style=" height: 40px;margin: auto;display: flex;align-items: center;justify-content: center">
-            <div style ="font-size: 1.5rem;font-weight: bolder; margin-top: 20px;text-align: center">
+          <div style=" height: 40px; margin: auto; display: flex; align-items: center; justify-content: center">
+            <div style ="font-size: 1.5rem;font-weight: bolder; margin-top: 20px; text-align: center">
               用 户 登 录
             </div>
           </div>
           <el-divider/>
           <el-form label-position="right" label-width="100px" style=" font-weight: bolder; font-size: 10px">
-            <el-form-item label="用户名"  style = "margin-top: 5px;">
-              <el-input v-model="account" style="width: 12.5vw; margin-left: 1rem" maxlength="18" clearable/>
+            <el-form-item label="账号"  style = "margin-top: 20px;">
+              <el-input v-model="account" style="width: 22.5vw; margin-left: 1rem" maxlength="50" clearable
+                        placeholder="输入用户名 / 手机号 / 邮箱"/>
             </el-form-item>
-            <el-form-item label="密码" style = "margin-top: 5px;">
-              <el-input v-model="password" style="width: 12.5vw; margin-left: 1rem" type="password" maxlength="20" clearable/>
+            <el-form-item label="密码" style = "margin-top: 20px;">
+              <el-input v-model="password" style="width: 22.5vw; margin-left: 1rem" type="password" maxlength="20" clearable/>
             </el-form-item>
           </el-form>
         </div>
-        <!-- 卡片操作 -->
+
         <div style="margin-top: 30px; display:flex;justify-content: center">
           <el-button type="primary"  @click="handle()">
             登录
@@ -47,8 +41,10 @@
 </template>
 <script>
 import axios from "axios";
+import { CryptoJS } from 'crypto-js'
 import { ElMessage } from "element-plus";
-import {Edit} from "@element-plus/icons-vue";
+import { Edit } from "@element-plus/icons-vue";
+
 export default {
   computed: {
     Edit() {
@@ -59,29 +55,31 @@ export default {
     return {
       account: "",
       password: "",
-      user_id:0,
-      user: {
-        id: "",
-      },
+      pwd_hash: "",
     };
   },
   methods: {
     signup(){
-      window.location.href = "/login/signup";
+      window.location.href = "/login/signup"
+    },
+    hash() {
+      this.pwd_hash = CryptoJS.SHA256(this.password).toString()
     },
     handle() {
-      axios
-        .post("http://127.0.0.1:8000/user/sign_in/", { // 后端URL
-          user_name: this.account,
-          password: this.password,
+      this.hash()
+      ElMessage.success(this.pwd_hash)
+      /*axios
+        .post("http://127.0.0.1:8000/user/login/", {
+          account: this.account,
+          pwd_hash: this.pwd_hash,
         })
         .then((response) => {
           window.location.href =
-            "/online_user?user_id=" + response.data.user_id;//到online_user.html
+            "/PriceMatchHub?user_id=" + response.data.data.user_id;
         })
         .catch((error) => {
-          ElMessage.error(error.response.data.error);
-        });
+          ElMessage.error(error.response.data.msg);
+        })*/
     },
   },
   mounted() {
@@ -92,7 +90,7 @@ export default {
 <style scoped>
 .loginBox {
   height: 300px;
-  width: 400px;
+  width: 600px;
   margin-top: 40px;
   margin-left: 27.5px;
   margin-right: 10px;
@@ -101,5 +99,13 @@ export default {
   padding-top: 15px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   text-align: center;
+}
+
+.circular-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 0px;
+
 }
 </style>
