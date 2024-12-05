@@ -7,12 +7,14 @@ import App from './login.vue'
 import router from './router/index.js'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import { sha256 } from "js-sha256";
 
 const app = createApp(App)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
 axios.defaults.baseURL = 'http://localhost:8000';
+app.config.globalProperties.$sha256 = sha256;
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)

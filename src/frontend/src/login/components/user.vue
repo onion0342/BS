@@ -41,7 +41,6 @@
 </template>
 <script>
 import axios from "axios";
-import { CryptoJS } from 'crypto-js'
 import { ElMessage } from "element-plus";
 import { Edit } from "@element-plus/icons-vue";
 
@@ -62,13 +61,27 @@ export default {
     signup(){
       window.location.href = "/login/signup"
     },
+    check() {
+      if(this.account == "") {
+        ElMessage.error("未输入用户名 / 手机号 / 邮箱")
+        return false
+      }
+      if(this.password == "") {
+        ElMessage.error("未输入密码")
+        return false
+      }
+      return true
+    },
     hash() {
-      this.pwd_hash = CryptoJS.SHA256(this.password).toString()
+      this.pwd_hash = this.$sha256(this.password)
     },
     handle() {
+      if(!this.check())
+        return
       this.hash()
+      
       ElMessage.success(this.pwd_hash)
-      /*axios
+      axios
         .post("http://127.0.0.1:8000/user/login/", {
           account: this.account,
           pwd_hash: this.pwd_hash,
@@ -79,7 +92,7 @@ export default {
         })
         .catch((error) => {
           ElMessage.error(error.response.data.msg);
-        })*/
+        })
     },
   },
   mounted() {

@@ -18,7 +18,7 @@
           <el-divider/>
           <el-form label-position="right" label-width="100px" style=" font-weight: bolder; font-size: 10px">
             <el-form-item label="用户名"  style = "margin-top: 5px;">
-              <el-input v-model="account" style="width: 22.5vw; margin-left: 1rem" maxlength="18" clearable
+              <el-input v-model="user_name" style="width: 22.5vw; margin-left: 1rem" maxlength="18" clearable
                         placeholder="输入用户名"/>
             </el-form-item>
             <el-form-item label="手机号"  style = "margin-top: 5px;">
@@ -59,23 +59,62 @@ import { ElMessage } from "element-plus";
 export default {
   data() {
     return {
-      account: "",
+      user_name: "",
       password: "",
-      IDCard: "",
+      email: "",
       phone: "",
+      confirmPassword: "",
+      pwd_hash: "",
+      code: "",
     };
   },
   methods: {
     login(){
       window.location.href = "/login/user";
     },
+    hash() {
+      this.pwd_hash = this.$sha256(this.password)
+    },
+    check() {
+      if(this.user_name == "") {
+        ElMessage.error("未输入用户名")
+        return false
+      }
+      if(this.phone == "") {
+        ElMessage.error("未输入手机号")
+        return false
+      }
+      if(this.email == "") {
+        ElMessage.error("未输入邮箱")
+        return false
+      }
+      if(this.password == "") {
+        ElMessage.error("未输入密码")
+        return false
+      }
+      if(this.confirmPassword == "") {
+        ElMessage.error("请重复密码")
+        return false
+      }
+      if(this.confirmPassword != this.password) {
+        ElMessage.error("前后输入密码不一致")
+        return false
+      }
+      return true
+    },
     handle() {
+      if(!this.check())
+        return
+      this.hash()
+      
+      ElMessage.success(this.pwd_hash)
       axios
-        .post("http://127.0.0.1:8000/user/sign_up/", {
-          user_name: this.account,
-          password: this.password,
-          identity_card: this.IDCard,
-          phone_num: this.phone,
+        .post("http://127.0.0.1:8000/user/add/", {
+          user_name: this.user_name,
+          phone: this.phone,
+          email: this.email,
+          pwd_hash: this.pwd_hash,
+          code: this.code,
         })
         .then((response) => {
           window.location.href = "/login/user";
@@ -86,6 +125,7 @@ export default {
     },
   },
   mounted() {
+
   },
 };
 </script>
