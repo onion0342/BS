@@ -81,7 +81,9 @@ export default {
       this.hash()
       
       ElMessage.success(this.pwd_hash)
-      axios
+      window.location.href =
+            "/PriceMatchHub?user_id=" + 1;
+      /*axios
         .post("http://127.0.0.1:8000/user/login/", {
           account: this.account,
           pwd_hash: this.pwd_hash,
@@ -92,7 +94,7 @@ export default {
         })
         .catch((error) => {
           ElMessage.error(error.response.data.msg);
-        })
+        })*/
     },
   },
   mounted() {
@@ -119,6 +121,5 @@ export default {
   height: 50px;
   border-radius: 50%;
   margin-right: 0px;
-
 }
 </style>

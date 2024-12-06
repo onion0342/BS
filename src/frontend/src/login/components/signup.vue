@@ -26,8 +26,12 @@
                         placeholder="输入手机号"/>
             </el-form-item>
             <el-form-item label="邮箱"  style = "margin-top: 5px;">
-              <el-input v-model="email" style="width: 22.5vw; margin-left: 1rem" maxlength="18" clearable
-                        placeholder="输入邮箱"/>
+              <el-input v-model="email" style="width: 18.5vw; margin-left: 1rem" maxlength="18" clearable
+                        placeholder="输入邮箱"
+                        @blur="emailConfirm()"/>
+              <el-button type="primary"  @click="getCode()" style="margin-left: 1rem;">
+                发送验证码
+              </el-button>
             </el-form-item>
             <el-form-item label="密码" style = "margin-top: 5px;">
               <el-input v-model="password" style="width: 22.5vw; margin-left: 1rem" type="password" maxlength="20" clearable
@@ -37,8 +41,12 @@
               <el-input v-model="confirmPassword" style="width: 22.5vw; margin-left: 1rem" type="password" maxlength="20" clearable
                         placeholder="重复输入密码"/>
             </el-form-item>
+            <el-form-item label="邮箱验证码" style = "margin-top: 5px;">
+              <el-input v-model="code" style="width: 22.5vw; margin-left: 1rem" type="password" maxlength="20" clearable
+                        placeholder="输入邮箱收到的验证码"/>
+            </el-form-item>
 
-            <!-- 卡片操作 -->
+            
             <div style="margin-top: 30px; display:flex;justify-content: center">
               <el-button type="primary"  @click="handle()">
                 注册
@@ -74,6 +82,18 @@ export default {
     },
     hash() {
       this.pwd_hash = this.$sha256(this.password)
+    },
+    getCode() {
+      axios
+        .post("http://127.0.0.1:8000/email/confirm/", {
+          email: this.email,
+        })
+        .then((response) => {
+          
+        })
+        .catch((error) => {
+          ElMessage.error(error.response.data.error);
+        })
     },
     check() {
       if(this.user_name == "") {
@@ -123,6 +143,15 @@ export default {
           ElMessage.error(error.response.data.error);
         });
     },
+    emailConfirm() {
+      const reg = /\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/
+      let str = this.email
+      if(reg.test(str)) {
+        
+      } else {
+        ElMessage.error("邮箱格式错误")
+      }
+    },
   },
   mounted() {
 
@@ -132,7 +161,7 @@ export default {
   
   <style scoped>
 .RegisterBox {
-  height: 450px;
+  height: 500px;
   width: 600px;
   margin-top: 40px;
   margin-left: 27.5px;
