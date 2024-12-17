@@ -16,12 +16,12 @@ class Product(models.Model):
     product_id = models.AutoField(primary_key=True)
     product_name = models.CharField(max_length=200, null=False)
     platform = models.ForeignKey('api.Platform', on_delete=models.CASCADE)
-    deal_num = models.IntegerField()
+    deal = models.CharField(max_length=200, null=False)
     shop_name = models.CharField(max_length=200, null=False, unique=True)
     location = models.CharField(max_length=200, null=False)
     text = models.TextField()
-    img = models.URLField(max_length=500)
-    web = models.URLField(max_length=500)
+    img = models.URLField(max_length=1000)
+    web = models.URLField(max_length=1000)
     is_valid = models.BooleanField(default=True, null=False)
 
 class PriceHistory(models.Model):

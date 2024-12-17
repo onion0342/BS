@@ -1,3 +1,7 @@
 from django.shortcuts import render
+from api.models import Product
 
-# Create your views here.
+def add_product(data):
+    new_product = Product()
+
+    return new_product.product_id
