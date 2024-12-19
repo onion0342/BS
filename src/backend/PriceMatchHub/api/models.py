@@ -8,6 +8,12 @@ class BasicUser(models.Model):
     email = models.EmailField(null=False, unique=True)
     pwd_hash = models.CharField(max_length=64, null=False)
 
+class EmailCode(models.Model):
+    email_code_id = models.AutoField(primary_key=True)
+    email = models.EmailField(null=False, unique=False)
+    code = models.CharField(max_length=20, null=False)
+    datetime = models.DateTimeField()
+
 class Platform(models.Model):
     platform_id = models.AutoField(primary_key=True)
     platform_name = models.CharField(max_length=50, null=False, unique=True)

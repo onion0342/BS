@@ -1,9 +1,14 @@
+import random
+import string
+import json
 from django.shortcuts import render
 from api.models import Product, Platform, PriceHistory
 from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from scripts.taobao import get_product
+from django.core.mail import send_mail
+from django.conf import settings
 
 def add_product(data):
     try:
@@ -91,6 +96,38 @@ def get_product_data_jingdong(request):
         response['payload'] = payload
         response['code'] = 0
         response['err'] = ""
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
+def email_confirm(request):
+    response = {'code': 0, 'err': ''}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            email = body_data.get('email')
+            print(email)
+            if not email:
+                response['code'] = 1
+                response['err'] = '邮箱错误'
+            else:
+
+                verification_code = ''.join(random.choices(string.digits, k=6))
+                
+                subject = 'PriceMatchHub 验证码'
+                message = f'你的验证码: {verification_code}'
+                from_email = settings.DEFAULT_FROM_EMAIL
+                send_mail(subject, message, from_email, [email], fail_silently=False)
+                
+                response['code'] = 0
+                response['msg'] = 'Verification code sent successfully.'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
     except Exception as e:
         response['code'] = 1
         response['err'] = str(e)

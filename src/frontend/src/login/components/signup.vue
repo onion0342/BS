@@ -85,11 +85,16 @@ export default {
     },
     getCode() {
       axios
-        .post("http://127.0.0.1:8000/email/confirm/", {
+        .post("http://127.0.0.1:8000/pricematchhub/email/confirm/", {
           email: this.email,
         })
         .then((response) => {
-          
+          console.log(response)
+          if(response.data.code == 0) {
+            ElMessage.success("验证码发送成功")
+          } else {
+            ElMessage.error(response.data.error)
+          }
         })
         .catch((error) => {
           ElMessage.error(error.response.data.error);
