@@ -79,22 +79,24 @@ export default {
       if(!this.check())
         return
       this.hash()
-      
-      ElMessage.success(this.pwd_hash)
-      window.location.href =
-            "/PriceMatchHub?user_id=" + 1;
-      /*axios
-        .post("http://127.0.0.1:8000/user/login/", {
+      axios
+        .post("http://127.0.0.1:8000/pricematchhub/user/login/", {
           account: this.account,
           pwd_hash: this.pwd_hash,
         })
         .then((response) => {
-          window.location.href =
-            "/PriceMatchHub?user_id=" + response.data.data.user_id;
+          console.log(response)
+          if(response.data.code == 0) {
+            ElMessage.success(response.data.msg)
+            window.location.href =
+            "/PriceMatchHub?user_id=" + response.data.payload.user_id;
+          } else {
+            ElMessage.error(response.data.err)
+          }
         })
         .catch((error) => {
-          ElMessage.error(error.response.data.msg);
-        })*/
+          ElMessage.error(error.response.data.err);
+        })
     },
   },
   mounted() {

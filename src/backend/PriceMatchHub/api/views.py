@@ -1,14 +1,16 @@
 import random
 import string
 import json
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
-from api.models import Product, Platform, PriceHistory
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from scripts.taobao import get_product
 from django.core.mail import send_mail
 from django.conf import settings
+
+from api.models import Product, Platform, PriceHistory, EmailCode, BasicUser
 
 def add_product(data):
     try:
@@ -105,18 +107,24 @@ def get_product_data_jingdong(request):
 
 @csrf_exempt
 def email_confirm(request):
-    response = {'code': 0, 'err': ''}
+    response = {}
     try:
         if request.method == 'POST':
             body_data = json.loads(request.body)
             email = body_data.get('email')
-            print(email)
+
             if not email:
                 response['code'] = 1
                 response['err'] = '邮箱错误'
             else:
-
-                verification_code = ''.join(random.choices(string.digits, k=6))
+                code = ''.join(random.choices(string.digits, k=6))
+                _datetime = datetime.now()
+                EmailCode.objects.create(
+                    email=email,
+                    code=code,
+                    datetime=_datetime
+                )
+                verification_code = code
                 
                 subject = 'PriceMatchHub 验证码'
                 message = f'你的验证码: {verification_code}'
@@ -124,7 +132,121 @@ def email_confirm(request):
                 send_mail(subject, message, from_email, [email], fail_silently=False)
                 
                 response['code'] = 0
-                response['msg'] = 'Verification code sent successfully.'
+                response['msg'] = '验证码已发送'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+def user_exists(user_name, email, phone):
+    try:
+        BasicUser.objects.get(user_name=user_name)
+        return 1
+    except ObjectDoesNotExist:
+        pass
+ 
+    try:
+        BasicUser.objects.get(email=email)
+        return 2
+    except ObjectDoesNotExist:
+        pass
+ 
+    try:
+        BasicUser.objects.get(phone=phone)
+        return 3
+    except ObjectDoesNotExist:
+        pass
+ 
+    return 0
+
+@csrf_exempt
+def register_user(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            email = body_data.get('email')
+            code = body_data.get('code')
+            _datetime = datetime.now()
+
+            try:
+                email_code = EmailCode.objects.filter(
+                    email=email,
+                    datetime__gte=_datetime - timedelta(minutes=5)
+                ).order_by('-datetime').first()
+            except ObjectDoesNotExist:
+                email_code = None
+
+            if email_code == None:
+                response['code'] = 1
+                response['err'] = '验证码未发送或已过期，请重试'
+            elif email_code.code != code:
+                response['code'] = 1
+                response['err'] = '验证码错误'
+            else:
+                user_name = body_data.get('user_name')
+                phone = body_data.get('phone')
+                pwd_hash = body_data.get('pwd_hash')
+                check = user_exists(user_name=user_name, email=email, phone=phone)
+                if check == 1:
+                    response['code'] = 1
+                    response['err'] = '该用户名已被注册'
+                elif check == 2:
+                    response['code'] = 1
+                    response['err'] = '该邮箱已被注册'
+                elif check == 3:
+                    response['code'] = 1
+                    response['err'] = '该手机号已被注册'
+                else:
+                    BasicUser.objects.create(
+                        user_name=user_name,
+                        phone=phone,
+                        pwd_hash=pwd_hash,
+                        email=email
+                    )
+                    response['code'] = 0
+                    response['msg'] = '注册成功'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
+def login(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            account = body_data.get('account')
+            pwd_hash = body_data.get('pwd_hash')
+
+            try:
+                user = BasicUser.objects.get(user_name=account)
+
+                if pwd_hash == user.pwd_hash:
+                    payload = {}
+                    payload['user_id'] = user.basic_user_id
+
+                    response['code'] = 0
+                    response['msg'] = '登陆成功'
+                    response['payload'] = payload
+                else:
+                    response['code'] = 1
+                    response['err'] = '用户名或密码错误'
+            except ObjectDoesNotExist:
+                user = None
+                response['code'] = 1
+                response['err'] = '用户名不存在'
         else:
             response['code'] = 1
             response['err'] = '非法请求，请重试'

@@ -42,7 +42,7 @@
                         placeholder="重复输入密码"/>
             </el-form-item>
             <el-form-item label="邮箱验证码" style = "margin-top: 5px;">
-              <el-input v-model="code" style="width: 22.5vw; margin-left: 1rem" type="password" maxlength="20" clearable
+              <el-input v-model="code" style="width: 22.5vw; margin-left: 1rem" maxlength="20" clearable
                         placeholder="输入邮箱收到的验证码"/>
             </el-form-item>
 
@@ -91,13 +91,13 @@ export default {
         .then((response) => {
           console.log(response)
           if(response.data.code == 0) {
-            ElMessage.success("验证码发送成功")
+            ElMessage.success(response.data.msg)
           } else {
-            ElMessage.error(response.data.error)
+            ElMessage.error(response.data.err)
           }
         })
         .catch((error) => {
-          ElMessage.error(error.response.data.error);
+          ElMessage.error(error.response.data.err);
         })
     },
     check() {
@@ -111,6 +111,15 @@ export default {
       }
       if(this.email == "") {
         ElMessage.error("未输入邮箱")
+        return false
+      }
+      if(this.password.length < 6 || this.password.length > 20) {
+        ElMessage.error("密码格式错误，6到20位，只能由大小写字母和数字组成")
+        return false
+      }
+      const passwordRegex = /^[A-Za-z0-9]+$/
+      if (!passwordRegex.test(this.password)) {
+        ElMessage.error("密码格式错误，只能由大小写字母和数字组成")
         return false
       }
       if(this.password == "") {
@@ -132,9 +141,8 @@ export default {
         return
       this.hash()
       
-      ElMessage.success(this.pwd_hash)
       axios
-        .post("http://127.0.0.1:8000/user/add/", {
+        .post("http://127.0.0.1:8000/pricematchhub/user/add/", {
           user_name: this.user_name,
           phone: this.phone,
           email: this.email,
@@ -142,10 +150,16 @@ export default {
           code: this.code,
         })
         .then((response) => {
-          window.location.href = "/login/user";
+          console.log(response)
+          if(response.data.code == 0) {
+            ElMessage.success(response.data.msg)
+            window.location.href = "/login/user";
+          } else {
+            ElMessage.error(response.data.err)
+          }
         })
         .catch((error) => {
-          ElMessage.error(error.response.data.error);
+          ElMessage.error(error.response.data.err);
         });
     },
     emailConfirm() {
