@@ -41,14 +41,22 @@ export default {
   methods: {
     goToUserCenter() {
       this.showMenu = false
-      window.location.href = "/"
-      
+      window.location.href = 
+        "/PriceMatchHub/usercenter?user_id=" + this.user_id
     },
     logout() {
-
       this.showMenu = false
-      window.location.href = "/"
+      window.location.href =
+        "/login"
     },
+    getDataFromURL() {
+      const url = new URL(window.location)
+      const params = new URLSearchParams(url.search)
+      this.user_id = params.get('user_id')
+    }
+  },
+  mounted() {
+    this.getDataFromURL()
   },
 };
 </script>

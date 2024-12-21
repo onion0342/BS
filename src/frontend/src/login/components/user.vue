@@ -85,11 +85,11 @@ export default {
           pwd_hash: this.pwd_hash,
         })
         .then((response) => {
-          console.log(response)
+          //console.log(response)
           if(response.data.code == 0) {
             ElMessage.success(response.data.msg)
             window.location.href =
-            "/PriceMatchHub?user_id=" + response.data.payload.user_id;
+              "/PriceMatchHub?user_id=" + response.data.payload.user_id;
           } else {
             ElMessage.error(response.data.err)
           }

@@ -256,3 +256,52 @@ def login(request):
         print(e)
     
     return JsonResponse(response)
+
+@csrf_exempt
+def get_user_detail(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            user_id = body_data.get('user_id')
+
+            try:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+
+                payload = {}
+                payload['user_name'] = user.user_name
+                payload['phone'] = user.phone
+                payload['email'] = user.email
+
+                payload['taobao_account'] = user.taobao_account
+                if payload['taobao_account'] == None:
+                    payload['taobao_account'] = '-'
+
+                payload['taobao_password'] = user.taobao_password
+                if payload['taobao_password'] == None:
+                    payload['taobao_password'] = '-'
+
+                payload['jingdong_account'] = user.jingdong_account
+                if payload['jingdong_account'] == None:
+                    payload['jingdong_account'] = '-'
+
+                payload['jingdong_password'] = user.jingdong_password
+                if payload['jingdong_password'] == None:
+                    payload['jingdong_password'] = '-'
+
+                response['code'] = 0
+                response['msg'] = '返回成功'
+                response['payload'] = payload
+            except ObjectDoesNotExist:
+                user = None
+                response['code'] = 1
+                response['err'] = '用户不存在'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)

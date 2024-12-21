@@ -89,7 +89,7 @@ export default {
           email: this.email,
         })
         .then((response) => {
-          console.log(response)
+          //console.log(response)
           if(response.data.code == 0) {
             ElMessage.success(response.data.msg)
           } else {
@@ -150,7 +150,7 @@ export default {
           code: this.code,
         })
         .then((response) => {
-          console.log(response)
+          //console.log(response)
           if(response.data.code == 0) {
             ElMessage.success(response.data.msg)
             window.location.href = "/login/user";
