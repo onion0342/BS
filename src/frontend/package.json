@@ -10,11 +10,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
-    "ant-design-vue": "^4.2.2",
     "axios": "^1.6.8",
-    "chart.js": "^4.4.3",
-    "counteroperatingsystem": "file:",
-    "crypto-js": "^4.2.0",
     "element-plus": "^2.7.3",
     "js-sha256": "^0.11.0",
     "pinia": "^2.1.7",

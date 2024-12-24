@@ -1,4 +1,6 @@
 from django.db import models
+from datetime import datetime, timedelta
+import pytz
 
 # Create your models here.
 class BasicUser(models.Model):
@@ -40,6 +42,12 @@ class PriceHistory(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, null=False)
     update_date = models.DateField() # YYYY-MM-DD
     update_time = models.TimeField() # HH:MM[:ss[.uuuuuu]]
+
+    def get_update_datetime_iso(self):
+        utc_zone = pytz.UTC
+        combined_datetime = datetime.combine(self.update_date, self.update_time, tzinfo=utc_zone)
+        iso_format = combined_datetime.isoformat()
+        return iso_format
 
 class SubProduct(models.Model):
     sub_product_id = models.AutoField(primary_key=True)

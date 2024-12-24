@@ -9,9 +9,11 @@
         <div class="search-box-wrapper">
           <el-input v-model="query" placeholder="搜索你感兴趣的商品..." class="search-input" maxlength="20" clearable />
           <span class="search-input-spacer"></span>
-          <el-button type="primary" @click="search">搜索</el-button>
+          <el-button type="primary" @click="this.search">搜索</el-button>
         </div>
       </div>
+      <!-- 获取订阅列表按钮 -->
+      <img src="../assets/sort.png" alt="Search" @click="this.isDisplaySortBox = true" class="sort-icon" />
       <div class="user-center" @mouseover="showMenu = true" @mouseleave="showMenu = false">
         <img src="../assets/user_center.png" alt="User Center" @click="this.goToUserCenter" class="user-icon" />
         <div v-if="showMenu" class="dropdown-menu">
@@ -20,26 +22,58 @@
         </div>
       </div>
     </div>
-    <div class="results-container">
-      <div v-for="item in searchResults" :key="item.id" class="product-card">
+    <div class="results-container" ref="container">
+      <div v-for="item in searchResults" :key="item.id" class="product-card" ref="cards">
         <div class="product-image">
           <img :src="item.imageUrl" alt="Product Image" />
         </div>
         <div class="product-info">
-          <h3>{{ item.name }}</h3>
-          <p><strong>价格:</strong> ¥{{ item.price }}</p>
+          <h3>{{ cleanSpanTags(item.name) }}</h3>
+          <p><strong>价格:</strong> <span class="price">{{ item.price }}</span></p>
           <p><strong>价格更新时间:</strong> {{ formatDate(item.priceUpdateTime) }}</p>
+          <p><strong>平台:</strong> {{ item.platform }}</p>
           <p><strong>成交量:</strong> {{ item.salesVolume }}</p>
           <p><strong>店铺名:</strong> {{ item.storeName }}</p>
           <p><strong>店铺位置:</strong> {{ item.storeLocation }}</p>
-          <p><strong>商品描述:</strong> {{ item.description }}</p>
+          <p v-if="item.description !== 'none'"><strong>商品描述:</strong> {{ item.description }}</p>
         </div>
         <div class="product-actions">
-          <el-button type="primary" @click="viewDetails(item)">查看详情</el-button>
-          <el-button type="primary" @click="">订阅商品</el-button>
+          <el-button type="primary" @click="openDetailsPage(item.clickUrl)">查看详情</el-button>
+          <el-button type="primary" @click="subPruduct(item.id)">订阅商品</el-button>
         </div>
       </div>
     </div>
+
+    <el-dialog v-model="isDisplaySortBox" :title="'商品排序'" width="30%" align-center>
+      <div class="sort-box">
+        <div class="price-sort">
+          <label for="minPrice">最低价格:</label>
+          <el-input-number v-model="sort.minPrice" :min="0" placeholder="请输入最低价格" id="minPrice" class="price-input"></el-input-number>
+          <!--<el-slider v-model="sort.minPrice" :min="0" :max="1000" @change="updateMinPrice" class="price-slider"></el-slider>-->
+        </div>
+        <div class="price-sort">
+          <label for="maxPrice">最高价格:</label>
+          <el-input-number v-model="sort.maxPrice" :min="0" placeholder="请输入最高价格" id="maxPrice" class="price-input"></el-input-number>
+          <!--<el-slider v-model="sort.maxPrice" :min="0" :max="1000" @change="updateMaxPrice" class="price-slider"></el-slider>-->
+        </div>
+        <div class="price-sort">
+          <label>排序顺序:</label>
+          <el-select v-model="sort.order" placeholder="请选择排序顺序">
+            <el-option label="升序" value="asc"></el-option>
+            <el-option label="降序" value="desc"></el-option>
+          </el-select>
+        </div>
+      </div>
+ 
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="this.resetSort">重置</el-button>
+          <el-button @click="this.handleSort">确认</el-button>
+          <el-button @click="this.isDisplaySortBox = false">取消</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
   </el-scrollbar>
 </template>
 
@@ -54,6 +88,13 @@ export default {
       query: "",
       showMenu: false,
       searchResults: [],
+      copySearchResults: [],
+      isDisplaySortBox: false,
+      sort: {
+        minPrice: 0,
+        maxPrice: 1000,
+        order: 'asc',
+      },
     };
   },
   methods: {
@@ -72,9 +113,73 @@ export default {
       const params = new URLSearchParams(url.search)
       this.user_id = params.get('user_id')
     },
+    getDataFromTaobao(key) {
+
+    },
+    getDataFromJingdong(key) {
+
+    },
+    search() {
+      this.getDataFromTaobao(this.query)
+      this.getDataFromJingdong(this.query)
+      this.getProducts(this.query)
+    },
+    getProducts(key) {
+      axios
+        .post("http://127.0.0.1:8000/pricematchhub/get/products", {
+          key: key,
+        })
+        .then((response) => {
+          if(response.data.code == 0) {
+            this.searchResults = response.data.payloads
+            this.copySearchResults = this.searchResults.slice()
+            this.handleSort()
+            ElMessage.success(response.data.msg)
+          } else {
+            ElMessage.error(response.data.err)
+          }
+        })
+        .catch((error) => {
+          ElMessage.error(error.response.data.err)
+        })
+    },
+    cleanSpanTags(text) {
+      return text.replace(/<span[^>]*>(.*?)<\/span>/gi, '')
+    },
     formatDate(dateString) {
-      const date = new Date(dateString);
-      return `${date.getFullYear()}-${('0' + (date.getMonth() + 1)).slice(-2)}-${('0' + date.getDate()).slice(-2)}`;
+      const date = new Date(dateString)
+      return `${date.getFullYear()}-${('0' + (date.getMonth() + 1)).slice(-2)}-${('0' + date.getDate()).slice(-2)}`
+    },
+    openDetailsPage(url) {
+      window.open(url, '_blank')
+    },
+    updateMinPrice(value) {
+      this.sort.minPrice = parseFloat(value.toFixed(2))
+    },
+    updateMaxPrice(value) {
+      this.sort.maxPrice = parseFloat(value.toFixed(2))
+    },
+    handleSort() {
+      let filteredResults = this.copySearchResults.filter(item => {
+        return item.price >= this.sort.minPrice && item.price <= this.sort.maxPrice
+      })
+      if (this.sort.order === 'desc') {
+        filteredResults.sort((a, b) => b.price - a.price);
+      } else {
+        filteredResults.sort((a, b) => a.price - b.price);
+      }
+      this.searchResults = filteredResults;
+      this.isDisplaySortBox = false
+    },
+    resetSort() {
+      this.sort.minPrice = 0
+      this.sort.maxPrice = 1000
+      this.sort.order = 'asc'
+      this.handleSort()
+      this.isDisplaySortBox = false
+    },
+    subPruduct(id) {
+
     },
   },
   mounted() {
@@ -90,9 +195,11 @@ export default {
           storeLocation: '位置1',
           description: '商品描述1',
           imageUrl: 'http://g.search3.alicdn.com/img/i3/2211812908957/O1CN01CD6NL52G2MYZqo5sn_!!2211812908957-0-alimamacc.jpg',
-          clickURL: '',
+          clickUrl: '',
+          platform: '',
         },
       ];
+    this.getProducts('')
   },
 };
 </script>
@@ -136,6 +243,17 @@ export default {
 }
 
 .user-icon:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
+
+.sort-icon {
+  width: 40px;
+  height: 40px;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.sort-icon:hover {
   transform: scale(1.1);
   filter: brightness(1.2);
 }
@@ -183,16 +301,37 @@ export default {
 }
  
 .product-card {
-  width: calc(20% - 16px); /* 三列布局，减去gap */
+  width: calc(20% - 16px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
+  height: 100%;
+  transition: transform 0.3s ease;
+  position: relative;
+}
+
+.product-card:hover {
+  transform: scale(1.05);
+}
+
+.product-image {
+  overflow: visible;
+  position: relative;
 }
  
 .product-image img {
   width: 100%;
   height: auto;
   display: block;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  z-index: 1;
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.05) translateY(-7%);
+  filter: brightness(1.05);
+  transform-origin: bottom;
+  z-index: 2;
 }
  
 .product-info {
@@ -213,7 +352,7 @@ export default {
 .product-actions .el-button {
   margin-left: 8px;
 }
- 
+
 .circular-image {
   width: 50px;
   height: 50px;
@@ -256,5 +395,27 @@ export default {
 .dropdown-menu-enter, .dropdown-menu-leave-to {
   opacity: 0;
   transform: translateY(10px);
+}
+
+.price {
+  color: rgb(35, 62, 240);
+  font-size: 1.5em;
+}
+
+.sort-box {
+  padding: 10px;
+}
+
+.el-select {
+  width: 50%;
+  margin-left: 10px;
+}
+
+.el-input-number {
+  margin-left: 10px;
+}
+
+.price-sort {
+  margin-top: 10px;
 }
 </style>

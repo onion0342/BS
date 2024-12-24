@@ -106,6 +106,56 @@ def get_product_data_jingdong(request):
     return JsonResponse(response)
 
 @csrf_exempt
+def get_products(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            key = body_data.get('key')
+            if key == "":
+                all_products = Product.objects.all()
+                cnt = all_products.count()
+                if cnt < 50:
+                    products = all_products
+                else:
+                    products = random.sample(all_products, 50)
+            else:
+                products = Product.objects.filter(product_name__icontains=key)
+
+            payloads = []
+
+            for product in products:
+                payload = {}
+                payload['id'] = product.product_id
+                payload['name'] = product.product_name
+                payload['salesVolume'] = product.deal
+                payload['storeName'] = product.shop_name
+                payload['storeLocation'] = product.location
+                payload['description'] = product.text
+                payload['imageUrl'] = product.img
+                payload['clickUrl'] = product.web
+                
+                latest_price_history = PriceHistory.objects.filter(product=product).order_by('-update_date', '-update_time').first()
+                payload['price'] = latest_price_history.price
+                payload['priceUpdateTime'] = latest_price_history.get_update_datetime_iso()
+
+                payload['platform'] = product.platform.platform_name
+                payloads.append(payload)
+            
+            response['payloads'] = payloads
+            response['code'] = 0
+            response['msg'] = '获取商品列表成功'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
 def email_confirm(request):
     response = {}
     try:
