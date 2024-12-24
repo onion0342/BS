@@ -13,15 +13,32 @@
         </div>
       </div>
       <div class="user-center" @mouseover="showMenu = true" @mouseleave="showMenu = false">
-        <img src="../assets/user_center.png" alt="User Center" @click="goToUserCenter" class="user-icon" />
+        <img src="../assets/user_center.png" alt="User Center" @click="this.goToUserCenter" class="user-icon" />
         <div v-if="showMenu" class="dropdown-menu">
-          <div class="dropdown-item" @click="goToUserCenter">个人中心</div>
-          <div class="dropdown-item" @click="logout">登出</div>
+          <div class="dropdown-item" @click="this.goToUserCenter">个人中心</div>
+          <div class="dropdown-item" @click="this.logout">登出</div>
         </div>
       </div>
     </div>
     <div class="results-container">
-        
+      <div v-for="item in searchResults" :key="item.id" class="product-card">
+        <div class="product-image">
+          <img :src="item.imageUrl" alt="Product Image" />
+        </div>
+        <div class="product-info">
+          <h3>{{ item.name }}</h3>
+          <p><strong>价格:</strong> ¥{{ item.price }}</p>
+          <p><strong>价格更新时间:</strong> {{ formatDate(item.priceUpdateTime) }}</p>
+          <p><strong>成交量:</strong> {{ item.salesVolume }}</p>
+          <p><strong>店铺名:</strong> {{ item.storeName }}</p>
+          <p><strong>店铺位置:</strong> {{ item.storeLocation }}</p>
+          <p><strong>商品描述:</strong> {{ item.description }}</p>
+        </div>
+        <div class="product-actions">
+          <el-button type="primary" @click="viewDetails(item)">查看详情</el-button>
+          <el-button type="primary" @click="">订阅商品</el-button>
+        </div>
+      </div>
     </div>
   </el-scrollbar>
 </template>
@@ -36,6 +53,7 @@ export default {
       user_id: 0,
       query: "",
       showMenu: false,
+      searchResults: [],
     };
   },
   methods: {
@@ -53,10 +71,28 @@ export default {
       const url = new URL(window.location)
       const params = new URLSearchParams(url.search)
       this.user_id = params.get('user_id')
-    }
+    },
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      return `${date.getFullYear()}-${('0' + (date.getMonth() + 1)).slice(-2)}-${('0' + date.getDate()).slice(-2)}`;
+    },
   },
   mounted() {
     this.getDataFromURL()
+    this.searchResults = [
+        {
+          id: 1,
+          name: '商品名称1',
+          price: 100.00,
+          priceUpdateTime: '2023-10-01T12:00:00Z',
+          salesVolume: '>=100',
+          storeName: '店铺名1',
+          storeLocation: '位置1',
+          description: '商品描述1',
+          imageUrl: 'http://g.search3.alicdn.com/img/i3/2211812908957/O1CN01CD6NL52G2MYZqo5sn_!!2211812908957-0-alimamacc.jpg',
+          clickURL: '',
+        },
+      ];
   },
 };
 </script>
@@ -96,6 +132,12 @@ export default {
   width: 30px;
   height: 30px;
   border-radius: 50%;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.user-icon:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
 }
  
 .search-section {
@@ -134,16 +176,55 @@ export default {
 }
  
 .results-container {
-  flex: 2;
-  padding: 20px;
-  overflow-y: auto;
-  background-color: #ffffff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+}
+ 
+.product-card {
+  width: calc(20% - 16px); /* 三列布局，减去gap */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+ 
+.product-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+ 
+.product-info {
+  padding: 16px;
+}
+ 
+.product-info p {
+  margin: 8px 0;
+}
+ 
+.product-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px;
+  background-color: #f5f5f5;
+}
+ 
+.product-actions .el-button {
+  margin-left: 8px;
 }
  
 .circular-image {
   width: 50px;
   height: 50px;
   border-radius: 50%;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  cursor: pointer;
+}
+
+.circular-image:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
 }
 
 .dropdown-menu {

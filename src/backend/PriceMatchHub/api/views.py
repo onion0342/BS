@@ -305,3 +305,179 @@ def get_user_detail(request):
         print(e)
     
     return JsonResponse(response)
+
+@csrf_exempt
+def user_pwd_change(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            user_id = body_data.get('user_id')
+            originPwdHash = body_data.get('originPwdHash')
+            newPwdHash = body_data.get('newPwdHash')
+            try:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+
+                if user.pwd_hash == originPwdHash:
+                    user.pwd_hash = newPwdHash
+                    user.save()
+                    response['code'] = 0
+                    response['msg'] = '修改成功'
+                else:
+                    response['code'] = 1
+                    response['err'] = '原密码错误'
+                
+            except ObjectDoesNotExist:
+                user = None
+                response['code'] = 1
+                response['err'] = '用户不存在'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
+def user_email_change(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            user_id = body_data.get('user_id')
+            newEmail = body_data.get('newEmail')
+            code = body_data.get('code')
+            _datetime = datetime.now()
+            try:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+
+                try:
+                    email_code = EmailCode.objects.filter(
+                        email=newEmail,
+                        datetime__gte=_datetime - timedelta(minutes=5)
+                    ).order_by('-datetime').first()
+                except ObjectDoesNotExist:
+                    email_code = None
+
+                if email_code == None:
+                    response['code'] = 1
+                    response['err'] = '验证码未发送或已过期，请重试'
+                elif email_code.code != code:
+                    response['code'] = 1
+                    response['err'] = '验证码错误'
+                else:
+                    user.email = newEmail
+                    user.save()
+                    response['code'] = 0
+                    response['msg'] = '邮箱绑定成功'
+                
+            except ObjectDoesNotExist:
+                user = None
+                response['code'] = 1
+                response['err'] = '用户不存在'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
+def user_phone_change(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            user_id = body_data.get('user_id')
+            newPhone = body_data.get('newPhone')
+            try:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+
+                user.phone = newPhone
+                user.save()
+                response['code'] = 0
+                response['msg'] = '手机号绑定成功'
+                
+            except ObjectDoesNotExist:
+                user = None
+                response['code'] = 1
+                response['err'] = '用户不存在'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
+def user_taobao_change(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            user_id = body_data.get('user_id')
+            account = body_data.get('account')
+            password = body_data.get('password')
+            try:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+
+                user.taobao_account = account
+                user.taobao_password = password
+                user.save()
+                response['code'] = 0
+                response['msg'] = '绑定成功'
+                
+            except ObjectDoesNotExist:
+                user = None
+                response['code'] = 1
+                response['err'] = '用户不存在'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
+def user_jingdong_change(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            user_id = body_data.get('user_id')
+            account = body_data.get('account')
+            password = body_data.get('password')
+            try:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+
+                user.jingdong_account = account
+                user.jingdong_password = password
+                user.save()
+                response['code'] = 0
+                response['msg'] = '绑定成功'
+                
+            except ObjectDoesNotExist:
+                user = None
+                response['code'] = 1
+                response['err'] = '用户不存在'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)

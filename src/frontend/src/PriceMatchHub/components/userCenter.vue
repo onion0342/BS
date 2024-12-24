@@ -2,23 +2,24 @@
     <el-scrollbar style="width: 100%; height: 100%">
         <div class="header">
             <div class="logo-and-title">
-                <img src="../assets/BSlogo.png" alt="Logo" class="circular-image" @click="goToMain" />
+                <img src="../assets/BSlogo.png" alt="Logo" class="circular-image" @click="this.goToMain" />
                 <div class="title">PriceMatchHub</div>
             </div>
+            <img src="../assets/backToMain.png" @click="this.goToMain" class="back-icon" />
         </div>
         <div class="user-info-container">
             <div class="user-info-box">
                 <div class="user-info">
                     <strong>用户名:</strong> {{ user_info.user_name }}
-                    <el-button class="info-button" @click="">更改密码</el-button>
+                    <el-button class="info-button" @click="this.isDisplayPwdChangeBox = true">更改密码</el-button>
                 </div>
                 <div class="user-info">
                     <strong>邮箱:</strong> {{ user_info.email }}
-                    <el-button class="info-button" @click="">绑定邮箱</el-button>
+                    <el-button class="info-button" @click="this.isDisplayEmailChangeBox = true">绑定邮箱</el-button>
                 </div>
                 <div class="user-info">
                     <strong>手机号:</strong> {{ user_info.phone }}
-                    <el-button class="info-button" @click="">更改手机号</el-button>
+                    <el-button class="info-button" @click="this.isDisplayPhoneChangeBox = true">更改手机号</el-button>
                 </div>
                 <div class="user-info">
                     <strong>绑定淘宝账号:</strong> {{ user_info.taobao_account }}
@@ -36,6 +37,71 @@
                 </div>
             </div>
         </div>
+        
+        <el-dialog v-model="isDisplayPwdChangeBox" :title="'更改密码'" width="30%"
+            align-center>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                原密码:
+                <el-input v-model="this.pwdChange.originPwd" style="width: 15vw;" type="password" clearable />
+            </div>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                新密码:
+                <el-input v-model="this.pwdChange.newPwd" style="width: 15vw;" type="password" clearable />
+            </div>
+
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="handlePwdChange">确认</el-button>
+                    <el-button @click="isDisplayPwdChangeBox = false;
+                                       this.pwdChange.originPwd = '';
+                                       this.pwdChange.newPwd = '';">
+                        取消
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="isDisplayEmailChangeBox" :title="'修改绑定邮箱'" width="30%"
+            align-center>
+            <div style="display: flex; align-items: center; margin-left: 2vw; margin-top: 20px;">
+                <span style="font-weight: bold; font-size: 1rem;">新邮箱:</span>
+                <el-input v-model="emailChange.newEmail" style="width: 13vw; margin-left: 1rem;" clearable />
+                <el-button type="primary" @click="this.getCode()" style="margin-left: 1rem;">发送验证码</el-button>
+            </div>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                验证码:
+                <el-input v-model="this.emailChange.code" style="width: 15vw;" clearable />
+            </div>
+
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="handleEmailChange">确认</el-button>
+                    <el-button @click="isDisplayEmailChangeBox = false;
+                                       this.emailChange.newEmail = '';
+                                       this.emailChange.code = '';">
+                        取消
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <el-dialog v-model="isDisplayPhoneChangeBox" :title="'修改绑定手机号'" width="30%"
+            align-center>
+            <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
+                新手机号:
+                <el-input v-model="this.phoneChange.newPhone" style="width: 15vw;" clearable />
+            </div>
+
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="handlePhoneChange">确认</el-button>
+                    <el-button @click="isDisplayPhoneChangeBox = false;
+                                       this.phoneChange.newPhone = '';">
+                        取消
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
 
         <el-dialog v-model="isDisplayTaobaoBox" :title="'绑定淘宝账号'" width="30%"
             align-center>
@@ -51,7 +117,11 @@
             <template #footer>
                 <span class="dialog-footer">
                     <el-button @click="handleTaobao">确认</el-button>
-                    <el-button @click="isDisplayTaobaoBox = false">取消</el-button>
+                    <el-button @click="isDisplayTaobaoBox = false;
+                                       this.taobao.account = '';
+                                       this.taobao.password = '';">
+                        取消
+                    </el-button>
                 </span>
             </template>
         </el-dialog>
@@ -70,16 +140,21 @@
             <template #footer>
                 <span class="dialog-footer">
                     <el-button @click="handleJingdong">确认</el-button>
-                    <el-button @click="isDisplayJingdongBox = false">取消</el-button>
+                    <el-button @click="isDisplayJingdongBox = false;
+                                       this.jingdong.account = '';
+                                       this.jingdong.password = '';">
+                        取消
+                    </el-button>
                 </span>
             </template>
         </el-dialog>
-    </el-scrollbar> 
+    </el-scrollbar>
 </template>
   
 <script>
 import axios from "axios";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { resolveTransitionHooks } from "vue";
   
 export default {
     data() {
@@ -96,6 +171,20 @@ export default {
         },
         isDisplayTaobaoBox: false,
         isDisplayJingdongBox: false,
+        isDisplayPwdChangeBox: false,
+        isDisplayEmailChangeBox: false,
+        isDisplayPhoneChangeBox: false,
+        pwdChange: {
+            originPwd: '',
+            newPwd: '',
+        },
+        emailChange: {
+            newEmail: '',
+            code: '',
+        },
+        phoneChange: {
+            newPhone: '',
+        },
         taobao: {
             account: '',
             password: '',
@@ -107,81 +196,170 @@ export default {
       };
     },
     methods: {
-      goToMain() {
-        window.location.href = "/PriceMatchHub/main?user_id=" + this.user_id;
-      },
-      getDataFromURL() {
-        const url = new URL(window.location);
-        const params = new URLSearchParams(url.search);
-        this.user_id = params.get('user_id');
-        this.fetchUserInfo();
-      },
-      fetchUserInfo() {
-        axios
-            .post("http://127.0.0.1:8000/pricematchhub/user/get/", {
-                user_id: this.user_id
-            })
-            .then((response) => {
+        goToMain() {
+            window.location.href = "/PriceMatchHub/main?user_id=" + this.user_id;
+        },
+        getCode() {
+            axios
+                .post("http://127.0.0.1:8000/pricematchhub/email/confirm/", {
+                    email: this.emailChange.newEmail,
+                })
+                .then((response) => {
+                //console.log(response)
                 if(response.data.code == 0) {
-                    this.user_info.user_name = response.data.payload.user_name
-                    this.user_info.email = response.data.payload.email
-                    this.user_info.phone = response.data.payload.phone
-                    this.user_info.taobao_account = response.data.payload.taobao_account
-                    this.user_info.taobao_password = response.data.payload.taobao_password
-                    this.user_info.jingdong_account = response.data.payload.jingdong_account
-                    this.user_info.jingdong_password = response.data.payload.jingdong_password
-                } else {
-                    ElMessage.error(response.data.err)
-                }
-            })
-            .catch((error) => {
-                ElMessage.error(error.response.data.err);
-            })
-      },
-      handleTaobao() {
-        axios
-            .post("http://127.0.0.1:8000/pricematchhub/user/taobao/set", {
-                user_id: this.user_id,
-                account: this.taobao.account,
-                password: this.taobao.password,
-            })
-            .then((response) => {
-                if(response.data.code == 0) {
-                    this.fetchUserInfo()
-                    this.isDisplayTaobaoBox = false
                     ElMessage.success(response.data.msg)
                 } else {
                     ElMessage.error(response.data.err)
                 }
-            })
-            .catch((error) => {
+                })
+                .catch((error) => {
                 ElMessage.error(error.response.data.err);
-            })
-      },
-      handleJingdong() {
-        axios
-            .post("http://127.0.0.1:8000/pricematchhub/user/jingdong/set", {
-                user_id: this.user_id,
-                account: this.jingdong.account,
-                password: this.jingdong.password,
-            })
-            .then((response) => {
-                if(response.data.code == 0) {
-                    this.fetchUserInfo()
-                    this.isDisplayJingdongBox = false
-                    ElMessage.success(response.data.msg)
-                } else {
-                    ElMessage.error(response.data.err)
-                }
-            })
-            .catch((error) => {
-                ElMessage.error(error.response.data.err);
-            })
-      },
+                })
+        },
+        getDataFromURL() {
+            const url = new URL(window.location);
+            const params = new URLSearchParams(url.search);
+            this.user_id = params.get('user_id');
+            this.fetchUserInfo();
+        },
+        fetchUserInfo() {
+            axios
+                .post("http://127.0.0.1:8000/pricematchhub/user/get/", {
+                    user_id: this.user_id
+                })
+                .then((response) => {
+                    if(response.data.code == 0) {
+                        this.user_info.user_name = response.data.payload.user_name
+                        this.user_info.email = response.data.payload.email
+                        this.user_info.phone = response.data.payload.phone
+                        this.user_info.taobao_account = response.data.payload.taobao_account
+                        this.user_info.taobao_password = response.data.payload.taobao_password
+                        this.user_info.jingdong_account = response.data.payload.jingdong_account
+                        this.user_info.jingdong_password = response.data.payload.jingdong_password
+                    } else {
+                        ElMessage.error(response.data.err)
+                    }
+                })
+                .catch((error) => {
+                    ElMessage.error(error.response.data.err);
+                })
+        },
+        hash(pwd) {
+            return this.$sha256(pwd)
+        },
+        handlePwdChange() {
+            const originPwdHash = this.hash(this.pwdChange.originPwd)
+            const newPwdHash = this.hash(this.pwdChange.newPwd)
+            axios
+                .post("http://127.0.0.1:8000/pricematchhub/user/password/change", {
+                    user_id: this.user_id,
+                    originPwdHash: originPwdHash,
+                    newPwdHash: newPwdHash,
+                })
+                .then((response) => {
+                    if(response.data.code == 0) {
+                        this.isDisplayPwdChangeBox = false
+                        this.pwdChange.originPwd = ""
+                        this.pwdChange.newPwd = ""
+                        ElMessage.success(response.data.msg)
+                    } else {
+                        ElMessage.error(response.data.err)
+                    }
+                })
+                .catch((error) => {
+                    ElMessage.error(error.response.data.err);
+                })
+        },
+        handlePhoneChange() {
+            axios
+                .post("http://127.0.0.1:8000/pricematchhub/user/phone/change", {
+                    user_id: this.user_id,
+                    newPhone: this.phoneChange.newPhone
+                })
+                .then((response) => {
+                    if(response.data.code == 0) {
+                        this.isDisplayPhoneChangeBox = false
+                        this.phoneChange.newPhone = ""
+                        this.fetchUserInfo()
+                        ElMessage.success(response.data.msg)
+                    } else {
+                        ElMessage.error(response.data.err)
+                    }
+                })
+                .catch((error) => {
+                    ElMessage.error(error.response.data.err);
+                })
+        },
+        handleEmailChange() {
+            axios
+                .post("http://127.0.0.1:8000/pricematchhub/user/email/change", {
+                    user_id: this.user_id,
+                    newEmail: this.emailChange.newEmail,
+                    code: this.emailChange.code
+                })
+                .then((response) => {
+                    if(response.data.code == 0) {
+                        this.isDisplayEmailChangeBox = false
+                        this.emailChange.newEmail = ""
+                        this.emailChange.code = ""
+                        this.fetchUserInfo()
+                        ElMessage.success(response.data.msg)
+                    } else {
+                        ElMessage.error(response.data.err)
+                    }
+                })
+                .catch((error) => {
+                    ElMessage.error(error.response.data.err);
+                })
+        },
+        handleTaobao() {
+            axios
+                .post("http://127.0.0.1:8000/pricematchhub/user/taobao/set", {
+                    user_id: this.user_id,
+                    account: this.taobao.account,
+                    password: this.taobao.password,
+                })
+                .then((response) => {
+                    if(response.data.code == 0) {
+                        this.fetchUserInfo()
+                        this.isDisplayTaobaoBox = false
+                        this.taobao.account = ""
+                        this.taobao.password = ""
+                        ElMessage.success(response.data.msg)
+                    } else {
+                        ElMessage.error(response.data.err)
+                    }
+                })
+                .catch((error) => {
+                    ElMessage.error(error.response.data.err);
+                })
+        },
+        handleJingdong() {
+            axios
+                .post("http://127.0.0.1:8000/pricematchhub/user/jingdong/set", {
+                    user_id: this.user_id,
+                    account: this.jingdong.account,
+                    password: this.jingdong.password,
+                })
+                .then((response) => {
+                    if(response.data.code == 0) {
+                        this.fetchUserInfo()
+                        this.isDisplayJingdongBox = false
+                        this.jingdong.account = ""
+                        this.jingdong.password = ""
+                        ElMessage.success(response.data.msg)
+                    } else {
+                        ElMessage.error(response.data.err)
+                    }
+                })
+                .catch((error) => {
+                    ElMessage.error(error.response.data.err);
+                })
+        },
     },
     mounted() {
-      this.getDataFromURL()
-      this.fetchUserInfo()
+        this.getDataFromURL()
+        this.fetchUserInfo()
     },
 };
 </script>
@@ -259,6 +437,25 @@ export default {
     width: 50px;
     height: 50px;
     border-radius: 50%;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    cursor: pointer;
+}
+ 
+.circular-image:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+}
+
+.back-icon {
+    width: 30px;
+    height: 30px;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    cursor: pointer;
+}
+
+.back-icon:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
 }
 
 </style>
