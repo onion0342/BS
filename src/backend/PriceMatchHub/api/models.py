@@ -53,3 +53,10 @@ class SubProduct(models.Model):
     sub_product_id = models.AutoField(primary_key=True)
     product = models.ForeignKey('api.Product', on_delete=models.CASCADE)
     user = models.ForeignKey('api.BasicUser', on_delete=models.CASCADE)
+
+class Cookies(models.Model):
+    cookies_id = models.AutoField(primary_key=True)
+    platform = models.ForeignKey('api.Platform', on_delete=models.CASCADE)
+    user = models.ForeignKey('api.BasicUser', on_delete=models.CASCADE)
+    cookie = models.TextField()
+    datetime = models.DateTimeField(auto_now_add=True)

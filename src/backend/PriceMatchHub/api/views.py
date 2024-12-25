@@ -1,45 +1,21 @@
 import random
 import string
 import json
+from django.utils import timezone
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from scripts.taobao import get_product
 from django.core.mail import send_mail
 from django.conf import settings
 
-from api.models import Product, Platform, PriceHistory, EmailCode, BasicUser
+from api.models import Product, Platform, PriceHistory, EmailCode, BasicUser, SubProduct, Cookies
 
-def add_product(data):
-    try:
-        product_name = data['product_name']
-        platform = Platform.objects.get(platform_name=data['platform'])
-        deal = data['deal']
-        shop_name = data['shop_name']
-        location = data['location']
-        text = 'none'
-        img = data['img']
-        web = data['web']
-        is_valid = True
+from scripts.web_init import get_avoid_check_web
+from scripts.jingdong import web_check as jingdong_web_check, jd_search
 
-        new_product = Product.objects.create(
-            product_name=product_name,
-            platform=platform,
-            deal=deal,
-            shop_name=shop_name,
-            location=location,
-            text=text,
-            img=img,
-            web=web,
-            is_valid=is_valid
-        )
-
-        return new_product.product_id
-    except Exception as e:
-        print(str(e))
-        return -1
+jingdong_webs = {}
     
 def add_platform(platform_name):
     try:
@@ -52,26 +28,72 @@ def add_platform(platform_name):
         print(str(e))
         return -1
 
-def add_priceHistory(data):
+@csrf_exempt
+def check_login(request):
+    response = {}
+    body_data = json.loads(request.body)
+    method = body_data.get('method')
+    user_id = body_data.get('user_id')
+    
+    if request.method == 'POST':
+        if method == 'check':
+            response['jd'] = True
+            user = BasicUser.objects.get(basic_user_id=user_id)
+            try:
+                jd_cookie = Cookies.objects.get(user=user, platform__platform_name='京东')
+                if timezone.now() - jd_cookie.datetime > timedelta(days=1):
+                    Cookies.objects.filter(user=user).delete()
+                    raise Cookies.DoesNotExist
+            except Cookies.DoesNotExist:
+                response['jd'] = False
+            
+            response['code'] = 0
+            response['msg'] = '检查成功'
+            
+            return JsonResponse(response)
+        else:
+            return JsonResponse({'error': '非法请求'})
+
+@csrf_exempt
+def get_qrcode_cookie(request):
+    response = {}
     try:
-        product = Product.objects.get(product_id=data['product'])
-        price = data['price']
+        body_data = json.loads(request.body)
+        platform = body_data.get('platform')
+        user_id = body_data.get('user_id')
+        payload = {}
+        print(jingdong_webs)
+        if platform == '京东':
+            if user_id not in jingdong_webs:
+                web = get_avoid_check_web()
+                web.get('https://passport.jd.com/new/login.aspx')
+                res = jingdong_web_check(web)
+            else:
+                res = jingdong_web_check(jingdong_webs[user_id])
 
-        now = datetime.now()
-        date_formatted = now.strftime('%Y-%m-%d')
-        time_formatted = now.strftime('%H:%M:%S.%f')[:12]
-
-        new_priceHistory = PriceHistory.objects.create(
-            product=product,
-            price=price,
-            update_date=date_formatted,
-            update_time=time_formatted
-        )
-
-        return new_priceHistory.price_history_id
+            if res[0] == "logged":
+                Cookies.objects.create(
+                    platform=Platform.objects.get(platform_name=platform),
+                    user=BasicUser.objects.get(basic_user_id=user_id),
+                    cookie=json.dumps(res[1]),
+                )
+                response['code'] = 2
+                response['msg'] = '扫码成功'
+            elif res[0] == 'not logged':
+                jingdong_webs[user_id] = res[1]
+                payload['qrcode'] = res[2]
+                response['payload'] = payload
+                response['code'] = 0
+                response['msg'] = '二维码获取成功'
+        else:
+            response['code'] = 1
+            response['err'] = '当前不支持该平台'
     except Exception as e:
-        print(str(e))
-        return -1
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
 
 @csrf_exempt
 def get_product_data_taobao(request):
@@ -93,11 +115,23 @@ def get_product_data_taobao(request):
 def get_product_data_jingdong(request):
     response = {}
     try:
-        payload = {}
-
-        response['payload'] = payload
+        body_data = json.loads(request.body)
+        key = body_data.get('key')
+        user_id = body_data.get('user_id')
+        user = BasicUser.objects.get(basic_user_id=user_id)
+        cookie = Cookies.objects.get(user=user, platform__platform_name='京东')
+        cookies = json.loads(cookie.cookie)
+        if user_id not in jingdong_webs:
+            web = get_avoid_check_web()
+            web.get('https://www.jd.com/')
+            for c in cookies:
+                web.add_cookie(c)
+        else:
+            web = jingdong_webs[user_id]
+        
+        jd_search(key, web)
         response['code'] = 0
-        response['err'] = ""
+        response['msg'] = "京东搜索成功"
     except Exception as e:
         response['code'] = 1
         response['err'] = str(e)
@@ -112,39 +146,64 @@ def get_products(request):
         if request.method == 'POST':
             body_data = json.loads(request.body)
             key = body_data.get('key')
-            if key == "":
-                all_products = Product.objects.all()
-                cnt = all_products.count()
-                if cnt < 50:
-                    products = all_products
+            user_id = body_data.get('user_id')
+            sub = body_data.get('sub')
+
+            try:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+
+                if sub == True:
+                    products = Product.objects.filter(subproduct__user=user)
                 else:
-                    products = random.sample(all_products, 50)
-            else:
-                products = Product.objects.filter(product_name__icontains=key)
+                    if key == "":
+                        all_products = Product.objects.all()
+                        cnt = all_products.count()
+                        if cnt < 50:
+                            products = all_products
+                        else:
+                            products = random.sample(list(all_products), 50)
+                    else:
+                        all_products = Product.objects.filter(product_name__icontains=key)
+                        cnt = all_products.count()
+                        if cnt < 50:
+                            products = all_products
+                        else:
+                            products = random.sample(list(all_products), 50)
 
-            payloads = []
+                payloads = []
 
-            for product in products:
-                payload = {}
-                payload['id'] = product.product_id
-                payload['name'] = product.product_name
-                payload['salesVolume'] = product.deal
-                payload['storeName'] = product.shop_name
-                payload['storeLocation'] = product.location
-                payload['description'] = product.text
-                payload['imageUrl'] = product.img
-                payload['clickUrl'] = product.web
+                for product in products:
+                    payload = {}
+                    payload['id'] = product.product_id
+                    payload['name'] = product.product_name
+                    payload['salesVolume'] = product.deal
+                    payload['storeName'] = product.shop_name
+                    payload['storeLocation'] = product.location
+                    payload['description'] = product.text
+                    payload['imageUrl'] = product.img
+                    payload['clickUrl'] = product.web
+                    
+                    latest_price_history = PriceHistory.objects.filter(product=product).order_by('-update_date', '-update_time').first()
+                    payload['price'] = latest_price_history.price
+                    payload['priceUpdateTime'] = latest_price_history.get_update_datetime_iso()
+
+                    payload['platform'] = product.platform.platform_name
+
+                    exists = SubProduct.objects.filter(product=product, user=user).exists()
+                    if exists:
+                        payload['is_sub'] = True
+                    else:
+                        payload['is_sub'] = False
+                    
+                    payloads.append(payload)
                 
-                latest_price_history = PriceHistory.objects.filter(product=product).order_by('-update_date', '-update_time').first()
-                payload['price'] = latest_price_history.price
-                payload['priceUpdateTime'] = latest_price_history.get_update_datetime_iso()
+                response['payloads'] = payloads
+                response['code'] = 0
+                response['msg'] = '获取商品列表成功'
+            except ObjectDoesNotExist:
+                response['code'] = 1
+                response['err'] = '用户不存在'
 
-                payload['platform'] = product.platform.platform_name
-                payloads.append(payload)
-            
-            response['payloads'] = payloads
-            response['code'] = 0
-            response['msg'] = '获取商品列表成功'
         else:
             response['code'] = 1
             response['err'] = '非法请求，请重试'
@@ -522,6 +581,90 @@ def user_jingdong_change(request):
                 user = None
                 response['code'] = 1
                 response['err'] = '用户不存在'
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
+def sub_product(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            user_id = body_data.get('user_id')
+            product_id = body_data.get('product_id')
+
+            exist_product = Product.objects.filter(product_id=product_id).exists()
+            exist_user = BasicUser.objects.filter(basic_user_id=user_id).exists()
+
+            if not exist_user:
+                response['code'] = 1
+                response['err'] = '用户不存在'
+            elif not exist_product:
+                response['code'] = 1
+                response['err'] = '商品不存在'
+            else:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+                product = Product.objects.get(product_id=product_id)
+                exist_sub = SubProduct.objects.filter(product=product, user=user).exists()
+                if exist_sub:
+                    response['code'] = 1
+                    response['err'] = '商品已订阅'
+                else:
+                    SubProduct.objects.create(
+                        product=product,
+                        user=user
+                    )
+                    response['code'] = 0
+                    response['msg'] = '成功订阅'
+                
+        else:
+            response['code'] = 1
+            response['err'] = '非法请求，请重试'
+    except Exception as e:
+        response['code'] = 1
+        response['err'] = str(e)
+        print(e)
+    
+    return JsonResponse(response)
+
+@csrf_exempt
+def cancelsub_product(request):
+    response = {}
+    try:
+        if request.method == 'POST':
+            body_data = json.loads(request.body)
+            user_id = body_data.get('user_id')
+            product_id = body_data.get('product_id')
+
+            exist_product = Product.objects.filter(product_id=product_id).exists()
+            exist_user = BasicUser.objects.filter(basic_user_id=user_id).exists()
+
+            if not exist_user:
+                response['code'] = 1
+                response['err'] = '用户不存在'
+            elif not exist_product:
+                response['code'] = 1
+                response['err'] = '商品不存在'
+            else:
+                user = BasicUser.objects.get(basic_user_id=user_id)
+                product = Product.objects.get(product_id=product_id)
+                exist_sub = SubProduct.objects.filter(product=product, user=user).exists()
+                if not exist_sub:
+                    response['code'] = 1
+                    response['err'] = '商品未订阅'
+                else:
+                    sub = SubProduct.objects.get(product=product, user=user)
+                    sub.delete()
+                    response['code'] = 0
+                    response['msg'] = '取消订阅'
+                
         else:
             response['code'] = 1
             response['err'] = '非法请求，请重试'

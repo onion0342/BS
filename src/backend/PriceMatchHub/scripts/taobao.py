@@ -1,3 +1,4 @@
+'''
 import time
 from DrissionPage import ChromiumPage, ChromiumOptions
 import re
@@ -102,3 +103,4 @@ if __name__ == '__main__':
     # clear_database()
     # get_product('键盘')
     # get_product('鼠标')
+'''

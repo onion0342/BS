@@ -9,11 +9,11 @@
         <div class="search-box-wrapper">
           <el-input v-model="query" placeholder="搜索你感兴趣的商品..." class="search-input" maxlength="20" clearable />
           <span class="search-input-spacer"></span>
-          <el-button type="primary" @click="this.search">搜索</el-button>
+          <el-button type="primary" @click="this.isDisplaySearchBox = true">搜索</el-button>
         </div>
       </div>
-      <!-- 获取订阅列表按钮 -->
-      <img src="../assets/sort.png" alt="Search" @click="this.isDisplaySortBox = true" class="sort-icon" />
+      <img src="../assets/sub.png" alt="Sub" @click="this.getSubProducts" class="sub-icon" />
+      <img src="../assets/sort.png" alt="Sort" @click="this.isDisplaySortBox = true" class="sort-icon" />
       <div class="user-center" @mouseover="showMenu = true" @mouseleave="showMenu = false">
         <img src="../assets/user_center.png" alt="User Center" @click="this.goToUserCenter" class="user-icon" />
         <div v-if="showMenu" class="dropdown-menu">
@@ -39,10 +39,33 @@
         </div>
         <div class="product-actions">
           <el-button type="primary" @click="openDetailsPage(item.clickUrl)">查看详情</el-button>
-          <el-button type="primary" @click="subPruduct(item.id)">订阅商品</el-button>
+          <el-button v-if="item.is_sub === false" type="primary" @click="subPruduct(item)">订阅商品</el-button>
+          <el-button v-if="item.is_sub === true" type="primary" @click="cancelSubPruduct(item)" class="el-button orange">已订阅</el-button>
         </div>
       </div>
     </div>
+
+    <el-dialog v-model="isDisplaySearchBox" :title="'搜索设置'" width="30%" align-center>
+      <div>
+        <el-checkbox v-model="selectedPlatforms" label="淘宝">淘宝</el-checkbox>
+        <el-checkbox v-model="selectedPlatforms" label="京东">京东</el-checkbox>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="this.checkLogin">搜索</el-button>
+          <el-button @click="this.isDisplaySearchBox = false">取消</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="isDisplayjdQRCodeBox" :title="'微信扫描二维码（请保证微信已绑定相应网站账号）'" width="30%" align-center>
+      <img :src="this.jingdongQECode" alt="QRCode" />
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="this.isDisplayjdQRCodeBox = false">取消</el-button>
+        </span>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="isDisplaySortBox" :title="'商品排序'" width="30%" align-center>
       <div class="sort-box">
@@ -89,11 +112,18 @@ export default {
       showMenu: false,
       searchResults: [],
       copySearchResults: [],
+      selectedPlatforms: [],
       isDisplaySortBox: false,
+      isDisplaySearchBox: false,
+      isDisplayjdQRCodeBox: false,
+      jd_timer: null,
+      jd_check: false,
+      taobaoQRCode: '',
+      jingdongQECode: '',
       sort: {
         minPrice: 0,
-        maxPrice: 1000,
-        order: 'asc',
+        maxPrice: 5000,
+        order: 'desc',
       },
     };
   },
@@ -113,21 +143,85 @@ export default {
       const params = new URLSearchParams(url.search)
       this.user_id = params.get('user_id')
     },
-    getDataFromTaobao(key) {
-
+    checkLogin() {
+      if(this.selectedPlatforms.length === 0) {
+        this.getProducts(this.query, false)
+        this.isDisplaySearchBox = false
+      } else {
+        axios
+        .post("http://127.0.0.1:8000/pricematchhub/check/logged", {
+          method: 'check',
+          user_id: this.user_id
+        })
+        .then((response) => {
+          //console.log(response)
+          if(response.data.code == 0) {
+            this.jd_check = response.data.jd
+            if(this.jd_check === false && this.selectedPlatforms.includes("京东")) {
+              this.jdLogin()
+            } else if(this.jd_check === true && this.selectedPlatforms.includes("京东")) {
+              this.searchJD()
+            }
+          } else {
+            ElMessage.error(response.data.err)
+          }
+        })
+        .catch((error) => {
+          ElMessage.error(error.response.data.err)
+        })
+      }
     },
-    getDataFromJingdong(key) {
-
+    jdLogin() {
+      axios
+        .post("http://127.0.0.1:8000/pricematchhub/get/qrcode_cookie", {
+          platform: '京东',
+          user_id: this.user_id
+        })
+        .then((response) => {
+          console.log(response)
+          if(response.data.code == 0) {
+            this.jingdongQECode = response.data.payload.qrcode
+            this.isDisplaySearchBox = false
+            this.isDisplayjdQRCodeBox = true
+            this.jd_timer = setTimeout(this.jdLogin, 10000)
+            //ElMessage.success(response.data.msg)
+          } else if(response.data.code == 2) {
+            this.isDisplayjdQRCodeBox = false
+            ElMessage.success(response.data.msg)
+          } else {
+            ElMessage.error(response.data.err)
+          }
+        })
+        .catch((error) => {
+          ElMessage.error(error.response.data.err)
+        })
     },
-    search() {
-      this.getDataFromTaobao(this.query)
-      this.getDataFromJingdong(this.query)
-      this.getProducts(this.query)
+    searchJD() {
+      ElMessage.warning('正在搜索中...')
+      Promise.allSettled([axios
+        .post("http://127.0.0.1:8000/pricematchhub/get/jingdong", {
+          user_id: this.user_id,
+          key: this.query,
+        })
+      ]).then((response) => {
+        console.log(response)
+        if(response[0].value.data.code == 0) {
+            ElMessage.success(response[0].value.data.msg)
+            this.isDisplaySearchBox = false
+            this.getProducts(this.query, false)
+          } else {
+            ElMessage.error(response[0].value.data.err)
+          }
+        }).catch((error) => {
+          ElMessage.error(error.response.data.err)
+        })
     },
-    getProducts(key) {
+    getProducts(key, sub) {
       axios
         .post("http://127.0.0.1:8000/pricematchhub/get/products", {
           key: key,
+          user_id: this.user_id,
+          sub: sub,
         })
         .then((response) => {
           if(response.data.code == 0) {
@@ -174,13 +268,61 @@ export default {
     resetSort() {
       this.sort.minPrice = 0
       this.sort.maxPrice = 1000
-      this.sort.order = 'asc'
+      this.sort.order = 'desc'
       this.handleSort()
       this.isDisplaySortBox = false
     },
-    subPruduct(id) {
-
+    subPruduct(item) {
+      axios
+        .post("http://127.0.0.1:8000/pricematchhub/sub/product", {
+          product_id: item.id,
+          user_id: this.user_id,
+        })
+        .then((response) => {
+          if(response.data.code == 0) {
+            item.is_sub = true
+            ElMessage.success(response.data.msg)
+          } else {
+            ElMessage.error(response.data.err)
+          }
+        })
+        .catch((error) => {
+          ElMessage.error(error.response.data.err)
+        })
     },
+    cancelSubPruduct(item) {
+      axios
+        .post("http://127.0.0.1:8000/pricematchhub/cancelsub/product", {
+          product_id: item.id,
+          user_id: this.user_id
+        })
+        .then((response) => {
+          if(response.data.code == 0) {
+            item.is_sub = false
+            ElMessage.warning(response.data.msg)
+          } else {
+            ElMessage.error(response.data.err)
+          }
+        })
+        .catch((error) => {
+          ElMessage.error(error.response.data.err)
+        })
+    },
+    getSubProducts() {
+      this.getProducts('', true)
+    },
+    watch: {
+      isDisplayjdQRCodeBox(nv, ov) {
+        if(nv === false && ov === true) {
+          this.jingdongQECode = ''
+          if(this.jd_timer) {
+            clearTimeout(this.jd_timer)
+            this.jd_timer = null
+          }
+          this.searchJD()
+        }
+      }
+    }
   },
   mounted() {
     this.getDataFromURL()
@@ -197,9 +339,10 @@ export default {
           imageUrl: 'http://g.search3.alicdn.com/img/i3/2211812908957/O1CN01CD6NL52G2MYZqo5sn_!!2211812908957-0-alimamacc.jpg',
           clickUrl: '',
           platform: '',
+          is_sub: false,
         },
       ];
-    this.getProducts('')
+    this.getProducts('', false)
   },
 };
 </script>
@@ -257,6 +400,17 @@ export default {
   transform: scale(1.1);
   filter: brightness(1.2);
 }
+
+.sub-icon {
+  width: 40px;
+  height: 40px;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.sub-icon:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
  
 .search-section {
   flex: 1;
@@ -291,6 +445,10 @@ export default {
   border-radius: 4px 4px 4px 4px;
   background-color: #409eff;
   color: #ffffff;
+}
+
+.orange {
+  background-color: orange;
 }
  
 .results-container {
@@ -328,7 +486,7 @@ export default {
 }
 
 .product-card:hover .product-image img {
-  transform: scale(1.05) translateY(-7%);
+  transform: scale(1.05) translateY(-4%);
   filter: brightness(1.05);
   transform-origin: bottom;
   z-index: 2;

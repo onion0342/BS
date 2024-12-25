@@ -21,6 +21,7 @@
                     <strong>手机号:</strong> {{ user_info.phone }}
                     <el-button class="info-button" @click="this.isDisplayPhoneChangeBox = true">更改手机号</el-button>
                 </div>
+                <!--
                 <div class="user-info">
                     <strong>绑定淘宝账号:</strong> {{ user_info.taobao_account }}
                 </div>
@@ -35,6 +36,7 @@
                     <strong>绑定京东密码:</strong> {{ user_info.jingdong_password }}
                     <el-button class="info-button" @click="this.isDisplayJingdongBox= true">绑定京东</el-button>
                 </div>
+                -->
             </div>
         </div>
         
