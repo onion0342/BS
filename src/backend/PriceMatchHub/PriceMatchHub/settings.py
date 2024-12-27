@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "api",
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -72,16 +73,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "PriceMatchHub.wsgi.application"
 
-DATABASE_PASSWORD = config['database_password']
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'PriceMatchHub',
-        'USER': 'root',
-        'PASSWORD': DATABASE_PASSWORD,
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

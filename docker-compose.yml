@@ -1,0 +1,48 @@
+services:
+  frontend:
+    build: 
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  backend:
+    build: 
+      context: ./src/backend/PriceMatchHub
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=PriceMatchHub.settings
+      - PYTHONUNBUFFERED=1
+      - DJANGO_DEBUG=True
+    volumes:
+      - ./src/backend/PriceMatchHub:/app
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 

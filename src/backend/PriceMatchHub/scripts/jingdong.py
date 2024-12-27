@@ -75,3 +75,14 @@ def jd_search(key, web):
         data['price'] = price
 
         add_product(data=data)
+    
+    data = {}
+    data['product_name'] = '订阅测试'
+    data['platform'] = '淘宝'
+    data['deal'] = 'none'
+    data['shop_name'] = 'none'
+    data['location'] = 'none'
+    data['img'] = 'https://img.alicdn.com/imgextra/i1/2217006857331/O1CN01q7ziIc241eSkqZjsM_!!2217006857331.jpg_.webp'
+    data['web'] = ''
+    data['price'] = 70
+    add_product(data=data)

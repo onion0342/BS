@@ -14,29 +14,28 @@ def draw_num(str_data):
 
 def get_avoid_check_web():
     chrome_options = Options()
-    chrome_options.add_experimental_option('excludeSwitches', ['enable-automation'])
-    chrome_options.add_argument('--enable-unsafe-swiftshader')
-    chrome_options.add_argument('--ignore-certificate-errors')
-    chrome_options.add_argument('--ignore-ssl-errors')
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--disable-gpu')
+    # 必要的 Chrome 选项
+    chrome_options.add_argument('--headless')  # 启用无头模式
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-software-rasterizer')
+    chrome_options.add_argument('--remote-debugging-port=9222')
+    chrome_options.binary_location = '/usr/bin/chromium'
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    driver_path = os.path.join(current_dir, 'chromedriver.exe')
+    # 添加日志输出
+    print("Starting Chrome with options:", chrome_options.arguments)
     
     try:
-        print(f"Starting ChromeDriver at {driver_path}")
-        bro = webdriver.Chrome(
-            executable_path=driver_path,
+        driver = webdriver.Chrome(
+            executable_path='/usr/bin/chromedriver',
             chrome_options=chrome_options
         )
-        print("ChromeDriver started successfully.")
+        print("Chrome started successfully")
+        return driver
     except Exception as e:
-        print(f"Failed to start ChromeDriver: {e}")
+        print(f"Error starting Chrome: {str(e)}")
         raise
-    return bro
 
 def add_price_history(price, product_id):
     product = Product.objects.get(product_id=product_id)

@@ -75,7 +75,6 @@ def get_qrcode_cookie(request):
         platform = body_data.get('platform')
         user_id = body_data.get('user_id')
         payload = {}
-        print(jingdong_webs)
         if platform == '京东':
             if user_id not in jingdong_webs:
                 web = get_avoid_check_web()
