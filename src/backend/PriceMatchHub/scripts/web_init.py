@@ -29,6 +29,7 @@ def get_avoid_check_web():
     try:
         driver = webdriver.Chrome(
             executable_path='/usr/bin/chromedriver',
+            #executable_path='./scripts/chromedriver.exe',
             chrome_options=chrome_options
         )
         print("Chrome started successfully")
