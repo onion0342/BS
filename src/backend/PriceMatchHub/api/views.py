@@ -13,9 +13,13 @@ from django.conf import settings
 from api.models import Product, Platform, PriceHistory, EmailCode, BasicUser, SubProduct, Cookies
 
 from scripts.web_init import get_avoid_check_web
-from scripts.jingdong import web_check as jingdong_web_check, jd_search
+from scripts.jingdong import web_check as jingdong_web_check
+from scripts.jingdong import jd_search
+from scripts.weipinghui import web_check as weipinhui_web_check
+from scripts.weipinghui import vph_search
 
 jingdong_webs = {}
+weipinhui_webs = {}
     
 def add_platform(platform_name):
     try:
@@ -42,11 +46,20 @@ def check_login(request):
             try:
                 jd_cookie = Cookies.objects.get(user=user, platform__platform_name='京东')
                 if timezone.now() - jd_cookie.datetime > timedelta(days=1):
-                    Cookies.objects.filter(user=user).delete()
+                    Cookies.objects.filter(user=user, platform__platform_name='京东').delete()
                     raise Cookies.DoesNotExist
             except Cookies.DoesNotExist:
                 response['jd'] = False
             
+            response['vph'] = True
+            try:
+                vph_cookie = Cookies.objects.get(user=user, platform__platform_name='唯品会')
+                if timezone.now() - vph_cookie.datetime > timedelta(days=1):
+                    Cookies.objects.filter(user_id=user, platform__platform_name='唯品会').delete()
+                    raise Cookies.DoesNotExist
+            except Cookies.DoesNotExist:
+                response['vph'] = False
+
             response['code'] = 0
             response['msg'] = '检查成功'
             
@@ -85,6 +98,28 @@ def get_qrcode_cookie(request):
                 response['payload'] = payload
                 response['code'] = 0
                 response['msg'] = '二维码获取成功'
+        elif platform == '唯品会':
+            if user_id not in weipinhui_webs:
+                web = get_avoid_check_web()
+                web.get('https://passport.vip.com/login')
+                res = weipinhui_web_check(web)
+            else:
+                res = weipinhui_web_check(weipinhui_webs[user_id])
+
+            if res[0] == "logged":
+                Cookies.objects.create(
+                    platform=Platform.objects.get(platform_name=platform),
+                    user=BasicUser.objects.get(basic_user_id=user_id),
+                    cookie=json.dumps(res[1]),
+                )
+                response['code'] = 2
+                response['msg'] = '扫码成功'
+            elif res[0] == 'not logged':
+                weipinhui_webs[user_id] = res[1]
+                payload['qrcode'] = res[2]
+                response['payload'] = payload
+                response['code'] = 0
+                response['msg'] = '二维码获取成功'
         else:
             response['code'] = 1
             response['err'] = '当前不支持该平台'
@@ -96,14 +131,27 @@ def get_qrcode_cookie(request):
     return JsonResponse(response)
 
 @csrf_exempt
-def get_product_data_taobao(request):
+def get_product_data_weipinhui(request):
     response = {}
     try:
-        payload = {}
-
-        response['payload'] = payload
+        body_data = json.loads(request.body)
+        key = body_data.get('key')
+        user_id = body_data.get('user_id')
+        user = BasicUser.objects.get(basic_user_id=user_id)
+        cookie = Cookies.objects.get(user=user, platform__platform_name='唯品会')
+        cookies = json.loads(cookie.cookie)
+        if user_id not in weipinhui_webs:
+            web = get_avoid_check_web()
+            web.get('https://www.vip.com/')
+            for c in cookies:
+                web.add_cookie(c)
+            web.get(f'https://category.vip.com/suggest.php?keyword={key}&ff=235|12|1|1/')
+        else:
+            web = weipinhui_webs[user_id]
+        
+        vph_search(key, web)
         response['code'] = 0
-        response['err'] = ""
+        response['msg'] = "京东搜索成功"
     except Exception as e:
         response['code'] = 1
         response['err'] = str(e)
@@ -382,13 +430,13 @@ def get_user_detail(request):
                 payload['phone'] = user.phone
                 payload['email'] = user.email
 
-                payload['taobao_account'] = user.taobao_account
-                if payload['taobao_account'] == None:
-                    payload['taobao_account'] = '-'
+                payload['weipinhui_account'] = user.weipinhui_account
+                if payload['weipinhui_account'] == None:
+                    payload['weipinhui_account'] = '-'
 
-                payload['taobao_password'] = user.taobao_password
-                if payload['taobao_password'] == None:
-                    payload['taobao_password'] = '-'
+                payload['weipinhui_password'] = user.weipinhui_password
+                if payload['weipinhui_password'] == None:
+                    payload['weipinhui_password'] = '-'
 
                 payload['jingdong_account'] = user.jingdong_account
                 if payload['jingdong_account'] == None:
@@ -528,7 +576,7 @@ def user_phone_change(request):
     return JsonResponse(response)
 
 @csrf_exempt
-def user_taobao_change(request):
+def user_weipinhui_change(request):
     response = {}
     try:
         if request.method == 'POST':
@@ -539,8 +587,8 @@ def user_taobao_change(request):
             try:
                 user = BasicUser.objects.get(basic_user_id=user_id)
 
-                user.taobao_account = account
-                user.taobao_password = password
+                user.weipinhui_account = account
+                user.weipinhui_password = password
                 user.save()
                 response['code'] = 0
                 response['msg'] = '绑定成功'

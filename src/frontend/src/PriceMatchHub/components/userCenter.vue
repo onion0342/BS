@@ -21,13 +21,19 @@
                     <strong>手机号:</strong> {{ user_info.phone }}
                     <el-button class="info-button" @click="this.isDisplayPhoneChangeBox = true">更改手机号</el-button>
                 </div>
-                <!--
                 <div class="user-info">
-                    <strong>绑定淘宝账号:</strong> {{ user_info.taobao_account }}
+                    <strong>京东使用微信二维码扫描登录，微信请绑定京东账号</strong>
                 </div>
                 <div class="user-info">
-                    <strong>绑定淘宝密码:</strong> {{ user_info.taobao_password }}
-                    <el-button class="info-button" @click="this.isDisplayTaobaoBox = true">绑定淘宝</el-button>
+                    <strong>唯品会使用微信二维码扫描登录，微信请绑定唯品会账号</strong>
+                </div>
+                <!--
+                <div class="user-info">
+                    <strong>绑定唯品会账号:</strong> {{ user_info.weipinhui_account }}
+                </div>
+                <div class="user-info">
+                    <strong>绑定唯品会密码:</strong> {{ user_info.weipinhui_password }}
+                    <el-button class="info-button" @click="this.isDisplayTaobaoBox = true">绑定唯品会</el-button>
                 </div>
                 <div class="user-info">
                     <strong>绑定京东账号:</strong> {{ user_info.jingdong_account }}
@@ -109,19 +115,19 @@
             align-center>
             <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
                 账号:
-                <el-input v-model="this.taobao.account" style="width: 15vw;" clearable />
+                <el-input v-model="this.weipinhui.account" style="width: 15vw;" clearable />
             </div>
             <div style="margin-left: 2vw; font-weight: bold; font-size: 1rem; margin-top: 20px; ">
                 密码:
-                <el-input v-model="this.taobao.password" style="width: 15vw;" clearable />
+                <el-input v-model="this.weipinhui.password" style="width: 15vw;" clearable />
             </div>
 
             <template #footer>
                 <span class="dialog-footer">
                     <el-button @click="handleTaobao">确认</el-button>
                     <el-button @click="isDisplayTaobaoBox = false;
-                                       this.taobao.account = '';
-                                       this.taobao.password = '';">
+                                       this.weipinhui.account = '';
+                                       this.weipinhui.password = '';">
                         取消
                     </el-button>
                 </span>
@@ -166,8 +172,8 @@ export default {
           user_name: '',
           email: '',
           phone: '',
-          taobao_account: '',
-          taobao_password: '',
+          weipinhui_account: '',
+          weipinhui_password: '',
           jingdong_account: '',
           jingdong_password: '',
         },
@@ -187,7 +193,7 @@ export default {
         phoneChange: {
             newPhone: '',
         },
-        taobao: {
+        weipinhui: {
             account: '',
             password: '',
         },
@@ -234,8 +240,8 @@ export default {
                         this.user_info.user_name = response.data.payload.user_name
                         this.user_info.email = response.data.payload.email
                         this.user_info.phone = response.data.payload.phone
-                        this.user_info.taobao_account = response.data.payload.taobao_account
-                        this.user_info.taobao_password = response.data.payload.taobao_password
+                        this.user_info.weipinhui_account = response.data.payload.weipinhui_account
+                        this.user_info.weipinhui_password = response.data.payload.weipinhui_password
                         this.user_info.jingdong_account = response.data.payload.jingdong_account
                         this.user_info.jingdong_password = response.data.payload.jingdong_password
                     } else {
@@ -316,17 +322,17 @@ export default {
         },
         handleTaobao() {
             axios
-                .post("http://127.0.0.1:8000/pricematchhub/user/taobao/set", {
+                .post("http://127.0.0.1:8000/pricematchhub/user/weipinhui/set", {
                     user_id: this.user_id,
-                    account: this.taobao.account,
-                    password: this.taobao.password,
+                    account: this.weipinhui.account,
+                    password: this.weipinhui.password,
                 })
                 .then((response) => {
                     if(response.data.code == 0) {
                         this.fetchUserInfo()
                         this.isDisplayTaobaoBox = false
-                        this.taobao.account = ""
-                        this.taobao.password = ""
+                        this.weipinhui.account = ""
+                        this.weipinhui.password = ""
                         ElMessage.success(response.data.msg)
                     } else {
                         ElMessage.error(response.data.err)

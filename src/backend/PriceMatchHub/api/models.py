@@ -9,8 +9,8 @@ class BasicUser(models.Model):
     phone = models.CharField(max_length=20, null=False, unique=True)
     email = models.EmailField(null=False, unique=True)
     pwd_hash = models.CharField(max_length=64, null=False)
-    taobao_account = models.CharField(max_length=100, null=True)
-    taobao_password = models.CharField(max_length=100, null=True)
+    weipinhui_account = models.CharField(max_length=100, null=True)
+    weipinhui_password = models.CharField(max_length=100, null=True)
     jingdong_account = models.CharField(max_length=100, null=True)
     jingdong_password = models.CharField(max_length=100, null=True)
 

@@ -1,14 +1,9 @@
-import json
-
 from lxml import etree
 from time import sleep
 
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
 from scripts.web_init import add_product
 from scripts.web_init import draw_num
-import time
 
 def web_check(web):
     try:
@@ -21,7 +16,7 @@ def web_check(web):
             qrcode_btn = web.find_element('xpath', '//*[@id="kbCoagent"]/ul/li[2]/a')
             qrcode_btn.click()
         except NoSuchElementException:
-            print('已在二维码页面')
+            print('')
         web.refresh()
         try:
             qrcode_img = web.find_element('xpath', "//*[@id='tpl_for_page']/span[1]/div[1]/div[4]/div[1]/img").get_attribute('src')

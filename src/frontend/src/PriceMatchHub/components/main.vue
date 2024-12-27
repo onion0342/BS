@@ -47,7 +47,7 @@
 
     <el-dialog v-model="isDisplaySearchBox" :title="'搜索设置'" width="30%" align-center>
       <div>
-        <el-checkbox v-model="selectedPlatforms" label="淘宝">淘宝</el-checkbox>
+        <el-checkbox v-model="selectedPlatforms" label="唯品会">唯品会</el-checkbox>
         <el-checkbox v-model="selectedPlatforms" label="京东">京东</el-checkbox>
       </div>
       <template #footer>
@@ -58,11 +58,20 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="isDisplayjdQRCodeBox" :title="'微信扫描二维码（请保证微信已绑定相应网站账号）'" width="30%" align-center>
-      <img :src="this.jingdongQECode" alt="QRCode" />
+    <el-dialog v-model="isDisplayjdQRCodeBox" :title="'微信扫描二维码（请保证微信已绑定京东账号）'" width="30%" align-center>
+      <img :src="this.jingdongQRCode" alt="QRCode" />
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="this.isDisplayjdQRCodeBox = false">取消</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="isDisplayvphQRCodeBox" :title="'微信扫描二维码（请保证微信已绑定唯品会账号）'" width="30%" align-center>
+      <img :src="this.weipinhuiQRCode" alt="QRCode" />
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="this.isDisplayvphQRCodeBox = false">取消</el-button>
         </span>
       </template>
     </el-dialog>
@@ -116,10 +125,12 @@ export default {
       isDisplaySortBox: false,
       isDisplaySearchBox: false,
       isDisplayjdQRCodeBox: false,
+      isDisplayvphQRCodeBox: false,
       jd_timer: null,
       jd_check: false,
-      taobaoQRCode: '',
-      jingdongQECode: '',
+      vph_check: false,
+      weipinhuiQRCode: '',
+      jingdongQRCode: '',
       sort: {
         minPrice: 0,
         maxPrice: 5000,
@@ -153,14 +164,20 @@ export default {
           method: 'check',
           user_id: this.user_id
         })
-        .then((response) => {
-          //console.log(response)
+        .then(async (response) => {
+          console.log(response)
           if(response.data.code == 0) {
             this.jd_check = response.data.jd
+            this.vph_check = response.data.vph
             if(this.jd_check === false && this.selectedPlatforms.includes("京东")) {
               this.jdLogin()
             } else if(this.jd_check === true && this.selectedPlatforms.includes("京东")) {
               this.searchJD()
+            }
+            if(this.vph_check === false && this.selectedPlatforms.includes("唯品会")) {
+              this.vphLogin()
+            } else if(this.vph_check === true && this.selectedPlatforms.includes("唯品会")) {
+              this.searchVPH()
             }
           } else {
             ElMessage.error(response.data.err)
@@ -180,11 +197,10 @@ export default {
         .then((response) => {
           console.log(response)
           if(response.data.code == 0) {
-            this.jingdongQECode = response.data.payload.qrcode
+            this.jingdongQRCode = response.data.payload.qrcode
             this.isDisplaySearchBox = false
             this.isDisplayjdQRCodeBox = true
-            this.jd_timer = setTimeout(this.jdLogin, 10000)
-            //ElMessage.success(response.data.msg)
+            this.jd_timer = setTimeout(this.jdLogin, 30000)
           } else if(response.data.code == 2) {
             this.isDisplayjdQRCodeBox = false
             ElMessage.success(response.data.msg)
@@ -197,9 +213,53 @@ export default {
         })
     },
     searchJD() {
-      ElMessage.warning('正在搜索中...')
+      ElMessage.warning('京东-正在搜索中...')
       Promise.allSettled([axios
         .post("http://127.0.0.1:8000/pricematchhub/get/jingdong", {
+          user_id: this.user_id,
+          key: this.query,
+        })
+      ]).then((response) => {
+        //console.log(response)
+        if(response[0].value.data.code == 0) {
+            ElMessage.success(response[0].value.data.msg)
+            this.isDisplaySearchBox = false
+            this.getProducts(this.query, false)
+          } else {
+            ElMessage.error(response[0].value.data.err)
+          }
+        }).catch((error) => {
+          ElMessage.error(error.response.data.err)
+        })
+    },
+    vphLogin() {
+      axios
+        .post("http://127.0.0.1:8000/pricematchhub/get/qrcode_cookie", {
+          platform: '唯品会',
+          user_id: this.user_id
+        })
+        .then((response) => {
+          console.log(response)
+          if(response.data.code == 0) {
+            this.weipinhuiQRCode = response.data.payload.qrcode
+            this.isDisplaySearchBox = false
+            this.isDisplayvphQRCodeBox = true
+            this.jd_timer = setTimeout(this.vphLogin, 30000)
+          } else if(response.data.code == 2) {
+            this.isDisplayvphQRCodeBox = false
+            ElMessage.success(response.data.msg)
+          } else {
+            ElMessage.error(response.data.err)
+          }
+        })
+        .catch((error) => {
+          ElMessage.error(error.response.data.err)
+        })
+    },
+    searchVPH() {
+      ElMessage.warning('唯品会-正在搜索中...')
+      Promise.allSettled([axios
+        .post("http://127.0.0.1:8000/pricematchhub/get/weipinhui", {
           user_id: this.user_id,
           key: this.query,
         })
@@ -314,7 +374,7 @@ export default {
     watch: {
       isDisplayjdQRCodeBox(nv, ov) {
         if(nv === false && ov === true) {
-          this.jingdongQECode = ''
+          this.jingdongQRCode = ''
           if(this.jd_timer) {
             clearTimeout(this.jd_timer)
             this.jd_timer = null

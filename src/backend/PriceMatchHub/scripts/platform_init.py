@@ -26,4 +26,5 @@ if __name__ == '__main__':
     add_platform('天猫')
     add_platform('京东')
     add_platform('拼多多')
+    add_platform('唯品会')
     print("Platform Database Initialized Successfully.")
